@@ -1,5 +1,5 @@
+local args = {...}
 local sidesTable = {'top', 'right', 'bottom', 'left', 'back', 'none'}
-local sidesCount = 6
 
 local function chooseSideFor(name, required)
     print('\nSelect the side the ' .. name .. ' is attached to:')
@@ -9,7 +9,7 @@ local function chooseSideFor(name, required)
     end
 
     local result = tonumber(read())
-    local validResult = result > 0 and result <= sidesCount
+    local validResult = result > 0 and result <= #sidesTable
 
     if not validResult and required then
         error('Invalid choice')
@@ -75,7 +75,17 @@ local function unpack()
 
     fs.delete('cc-mine-atm8/')
 
-    writeConstants()
+    local skipConstants = false
+    for k, v in pairs(args) do
+        if v == '-s' or v == '--silent' then skipConstants = true end
+    end
+
+    if skipConstants then
+        print('Updated')
+    else
+        writeConstants()
+    end
+
     createStartup()
 end
 

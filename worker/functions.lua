@@ -22,8 +22,10 @@ end
 function waitForEvent(eventName)
     local event, modemSide, senderChannel, replyChannel, message, senderDistance = os.pullEvent(eventName)
 
-    local infoTable = parseFarmInfo(message)
-    message = infoTable.state and 'turnOn' or 'turnOff'
+    if message ~= 'update' then
+        local infoTable = parseFarmInfo(message)
+        message = infoTable.state and 'turnOn' or 'turnOff'
+    end
 
     return {
         event = event,
