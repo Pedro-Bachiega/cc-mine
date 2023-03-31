@@ -1,7 +1,19 @@
 local args = {...}
-local sidesTable = {'top', 'right', 'bottom', 'left', 'back', 'none'}
+
+os.loadAPI('cc-mine-atm8/utils/machine.lua')
+
+local argsTable = machine.argsToKnownTable(args)
+local computerType = argsTable.computerType
+
+local function createStartup()
+    local file = fs.open('startup.lua', 'w')
+    file.write('shell.run(\'run.lua\')')
+    file.close()
+end
 
 local function chooseSideFor(name, required)
+    local sidesTable = {'top', 'right', 'bottom', 'left', 'back', 'none'}
+
     print('\nSelect the side the ' .. name .. ' is attached to:')
 
     for index, value in ipairs(sidesTable) do
@@ -28,7 +40,7 @@ end
 local function writeConstants()
     local modemSide = chooseSideFor('modem', true)
     local monitorSide = chooseSideFor('monitor', false)
-    local redstoneSide = chooseSideFor('redstone', true)
+    local redstoneSide = computerType == 'worker' and chooseSideFor('redstone', true) or 'none'
 
     local channel = chooseChannel()
 
@@ -52,42 +64,26 @@ CHANNEL = <channel>
     file.close()
 end
 
-local function createStartup()
-    local file = fs.open('startup.lua', 'w')
-    file.write('shell.run(\'work.lua\')')
-    file.close()
-end
-
 local function unpack()
-    local workerDir = 'cc-mine-atm8/worker/'
-    local workerFiles = fs.list(workerDir)
-    for index, fileName in ipairs(workerFiles) do
+    local contentDir = 'cc-mine-atm8/' .. computerType .. '/'
+    local contentFiles = fs.list(contentDir)
+    for index, fileName in ipairs(contentFiles) do
         if fs.exists(fileName) then fs.delete(fileName) end
-        if fileName ~= 'install.lua' then fs.copy(workerDir .. fileName, fileName) end
+        fs.copy(contentDir .. fileName, fileName)
     end
 
     local utilsDir = 'cc-mine-atm8/utils/'
     local utilFiles = fs.list(utilsDir)
     for index, fileName in ipairs(utilFiles) do
         if fs.exists(fileName) then fs.delete(fileName) end
-        fs.copy(utilsDir .. fileName, fileName)
+        if fileName ~= 'install.lua' then fs.copy(utilsDir .. fileName, fileName) end
     end
 
     fs.delete('cc-mine-atm8/')
 
-    local skipConstants = false
-    for k, v in pairs(args) do
-        if v == '-s' or v == '--silent' then skipConstants = true end
-    end
-
-    if skipConstants then
-        print('Updated')
-    else
-        writeConstants()
-    end
-
+    if argsTable.skipConstants then print('\nUpdated') else writeConstants() end
     createStartup()
 end
 
 unpack()
-shell.run('work.lua')
+shell.run('run.lua', '-t', computerType)
