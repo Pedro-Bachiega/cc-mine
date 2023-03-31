@@ -1,13 +1,32 @@
 local args = {...}
 
-os.loadAPI('cc-mine-atm8/utils/machine.lua')
+local function argsToKnownTable(args)
+    local computerType = nil
 
-local argsTable = machine.argsToKnownTable(args)
+    for index, value in ipairs(args) do
+        if value == '-t' or value == '--type' then
+            computerType = args[index + 1]
+        end
+    end
+
+    return {
+        computerType = computerType
+    }
+end
+
+local argsTable = argsToKnownTable(args)
 local computerType = argsTable.computerType
+
+if fs.exists('constants.lua') then
+    os.loadAPI('constants.lua')
+    computerType = constants.COMPUTER_TYPE or computerType
+else
+    constants = {}
+end
 
 local function createStartup()
     local file = fs.open('startup.lua', 'w')
-    file.write('shell.run(\'run.lua\')')
+    file.write(string.format('shell.run(\'run.lua\', \'-t\', \'%s\')'), computerType)
     file.close()
 end
 
@@ -38,13 +57,16 @@ local function chooseChannel()
 end
 
 local function writeConstants()
-    local modemSide = chooseSideFor('modem', true)
-    local monitorSide = chooseSideFor('monitor', false)
-    local redstoneSide = computerType == 'worker' and chooseSideFor('redstone', true) or 'none'
+    local modemSide = constants.MODEM_SIDE or chooseSideFor('modem', true)
+    local monitorSide = constants.MONITOR_SIDE or chooseSideFor('monitor', false)
+    local redstoneSide = constants.REDSTONE_SIDE or (computerType == 'worker' and chooseSideFor('redstone', true) or 'none')
 
-    local channel = chooseChannel()
+    local channel = constants.CHANNEL or (computerType == 'storage' and '420' or chooseChannel())
 
     local constants = [[
+-- Computer
+COMPUTER_TYPE = '<computer_type>'
+
 -- Generic
 MODEM_SIDE = '<modem_side>'
 MONITOR_SIDE = '<monitor_side>'
@@ -52,8 +74,10 @@ REDSTONE_SIDE = '<redstone_side>'
 
 -- Channels
 CHANNEL = <channel>
+CHANNEL_STORAGE = 420
     ]]
 
+    constants = string.gsub(constants, '<computer_type>', computerType)
     constants = string.gsub(constants, '<modem_side>', modemSide)
     constants = string.gsub(constants, '<monitor_side>', monitorSide)
     constants = string.gsub(constants, '<redstone_side>', redstoneSide)
@@ -64,24 +88,33 @@ CHANNEL = <channel>
     file.close()
 end
 
+local function deleteFiles(list)
+    for index, fileName in ipairs(list) do
+        if fs.exists(fileName) then fs.delete(fileName) end
+    end
+end
+
 local function unpack()
     local contentDir = 'cc-mine-atm8/' .. computerType .. '/'
     local contentFiles = fs.list(contentDir)
-    for index, fileName in ipairs(contentFiles) do
-        if fs.exists(fileName) then fs.delete(fileName) end
-        fs.copy(contentDir .. fileName, fileName)
-    end
+    deleteFiles(contentFiles)
 
     local utilsDir = 'cc-mine-atm8/utils/'
     local utilFiles = fs.list(utilsDir)
+    deleteFiles(utilFiles)
+    
+    for index, fileName in ipairs(contentFiles) do
+        fs.copy(contentDir .. fileName, fileName)
+    end
     for index, fileName in ipairs(utilFiles) do
-        if fs.exists(fileName) then fs.delete(fileName) end
-        if fileName ~= 'install.lua' then fs.copy(utilsDir .. fileName, fileName) end
+        if not fs.exists(fileName) and fileName ~= 'install.lua' then
+            fs.copy(utilsDir .. fileName, fileName)
+        end
     end
 
     fs.delete('cc-mine-atm8/')
 
-    if argsTable.skipConstants then print('\nUpdated') else writeConstants() end
+    writeConstants()
     createStartup()
 end
 

@@ -55,7 +55,7 @@ function writeFarmInfo(infoTable)
     monitor:drawDivider(maxX, 1, 5)
 
     -- Drops - Line 7+
-    if infoTable.content ~= nil then
+    if infoTable.content  then
         local cursorY = 7
 
         local function writeDrops(dropTable)
@@ -67,12 +67,12 @@ function writeFarmInfo(infoTable)
             return y
         end
 
-        if infoTable.content.fluid ~= nil then
+        if infoTable.content.fluid then
             monitor:writeFarmContents('Fluids: ', '', colors.lime, minX, cursorY)
             cursorY = writeDrops(infoTable.content.fluid)
         end
 
-        if infoTable.content.solid ~= nil then
+        if infoTable.content.solid then
             cursorY = cursorY + 1
             monitor:writeFarmContents('Solids: ', '', colors.lime, minX, cursorY)
             cursorY = writeDrops(infoTable.content.solid)
