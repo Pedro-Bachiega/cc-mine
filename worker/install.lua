@@ -59,10 +59,18 @@ local function createStartup()
 end
 
 local function unpack()
-    local workerFiles = fs.list('cc-mine-atm8/worker/')
+    local workerDir = 'cc-mine-atm8/worker/'
+    local workerFiles = fs.list(workerDir)
     for index, fileName in ipairs(workerFiles) do
         if fs.exists(fileName) then fs.delete(fileName) end
-        if fileName ~= 'install.lua' then fs.copy('cc-mine-atm8/worker/' .. fileName, fileName) end
+        if fileName ~= 'install.lua' then fs.copy(workerDir .. fileName, fileName) end
+    end
+
+    local utilsDir = 'cc-mine-atm8/utils/'
+    local utilFiles = fs.list(utilsDir)
+    for index, fileName in ipairs(utilFiles) do
+        if fs.exists(fileName) then fs.delete(fileName) end
+        fs.copy(utilsDir .. fileName, fileName)
     end
 
     fs.delete('cc-mine-atm8/')
