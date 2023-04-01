@@ -1,10 +1,5 @@
 os.loadAPI('commands.lua')
-os.loadAPI('constants.lua')
 os.loadAPI('functions.lua')
-
-local command = ''
-
-functions.openModem()
 
 while true do
     local eventTable = functions.waitForEvent('modem_message')
@@ -17,4 +12,4 @@ while true do
     end
 end
 
-shell.run('update', '-t', constants.COMPUTER_TYPE)
+shell.run('update')

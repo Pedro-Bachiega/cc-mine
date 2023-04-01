@@ -1,3 +1,5 @@
+os.loadAPI('functions.lua')
+
 function writeFarmInfo(infoTable)
     monitor = peripheral.wrap(constants.MONITOR_SIDE)
 
@@ -32,6 +34,13 @@ function writeFarmInfo(infoTable)
         self.setTextColor(colors.blue)
         self.write(tostring(constants.CHANNEL))
     end
+    
+    function monitor:writeTimestamp(x, y)
+        local text = 'Updated at: ' .. functions.getTimestamp()
+        self.setCursorPos(x, y)
+        self.setTextColor(colors.lightGray)
+        self.write(text)
+    end
 
     function monitor:drawDivider(size, x, y)
         self.setCursorPos(x, y)
@@ -48,15 +57,15 @@ function writeFarmInfo(infoTable)
     -- Farm Type - Line 2
     monitor:writeFarmType(infoTable.farmType, minX, minY)
 
-    -- State - Line 4
-    monitor:writeFarmState(infoTable.state, minX, 4)
+    -- State - Line 3
+    monitor:writeFarmState(infoTable.state, minX, 3)
 
-    -- Didivder - Line 5
-    monitor:drawDivider(maxX, 1, 5)
+    -- Didider - Line 4
+    monitor:drawDivider(maxX, 1, 4)
 
-    -- Drops - Line 7+
+    -- Drops - Line 6+
     if infoTable.content  then
-        local cursorY = 7
+        local cursorY = 6
 
         local function writeDrops(dropTable)
             local y = cursorY
@@ -80,9 +89,10 @@ function writeFarmInfo(infoTable)
     end
 
 
-    -- Didivder - Penultimate Line
-    monitor:drawDivider(maxX, 1, maxY - 2)
+    -- Didider
+    monitor:drawDivider(maxX, 1, maxY - 3)
 
-    -- Channel - Last Line
-    monitor:writeFarmChannel(minX, maxY - 1)
+    -- Channel and Time - Last Line
+    monitor:writeFarmChannel(minX, maxY - 2)
+    monitor:writeTimestamp(minX, maxY - 1)
 end

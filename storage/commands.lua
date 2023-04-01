@@ -12,18 +12,20 @@ local function find(id, replyChannel)
         })
     end
 
-    sleep(1)
+    sleep(0.2)
     print('Response: ' .. response)
-    local modem = functions.openModem()
     print('Responding to channel: ' .. replyChannel)
-    modem.transmit(replyChannel, constants.CHANNEL, response)
-    return true
+    functions.sendMessage(replyChannel, constants.CHANNEL, response)
+    return response
 end
 
-local function insert(id, content)
+local function insert(id, replyChannel, content)
     content = json.encode(content)
     storage.insert(id, content)
-    return find(id, id)
+
+    print(string.format('Updating channels: [%d, %d]', id, replyChannel))
+    functions.sendMessage(id, constants.CHANNEL, content)
+    functions.sendMessage(replyChannel, constants.CHANNEL, content)
 end
 
 local function handleMessage(message, replyChannel)
@@ -37,12 +39,14 @@ local function handleMessage(message, replyChannel)
     local id = body.id
 
     if method == 'INSERT' then
-        handled = insert(id, body)
+        insert(id, replyChannel, body)
+        return true
     elseif method == 'FIND' then
-        handled = find(id, replyChannel)
+        find(id, replyChannel)
+        return true
     end
 
-    return handled
+    return false
 end
 
 function runCommandIfExists(message, replyChannel)

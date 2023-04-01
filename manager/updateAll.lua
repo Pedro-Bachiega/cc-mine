@@ -1,11 +1,11 @@
 os.loadAPI('channels.lua')
+os.loadAPI('constants.lua')
 os.loadAPI('functions.lua')
 
-local modem = functions.openModem()
-for k, v in pairs(channels.ALL) do
-    print('Updating channel ' .. v)
-    modem.transmit(v, constant.CHANNEL, 'update')
-    sleep(1)
+for k, value in pairs(channels.ALL) do
+    print('Updating ' .. value.name)
+    functions.sendMessage(value.channel, constants.CHANNEL, 'update')
+    sleep(0.2)
 end
 
 shell.run('update.lua')

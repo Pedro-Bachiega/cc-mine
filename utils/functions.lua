@@ -20,8 +20,32 @@ function argsToKnownTable(args)
     }
 end
 
+local function openModem()
+    local modem = peripheral.wrap(constants.MODEM_SIDE)
+    modem.open(constants.CHANNEL)
+    return modem
+end
+
+function round(number, minimum)
+    local result = math.floor(number + 0.5)
+    if not minimum then return result end
+    return result >= minimum and result or minimum
+end
+
+function getTimestamp()
+    local table = os.date("*t", timestamp) or os.date("%format", timestamp)
+    return string.format(
+        '%02d:%02d - %d/%d/%d',
+        table.hour,
+        table.min,
+        table.day,
+        table.month,
+        table.year
+    )
+end
 
 function waitForEvent(eventName)
+    openModem()
     local event, modemSide, senderChannel, replyChannel, message, senderDistance = os.pullEvent(eventName)
 
     return {
@@ -34,19 +58,34 @@ function waitForEvent(eventName)
     }
 end
 
-function round(number, minimum)
-    local result = math.floor(number + 0.5)
-    if not minimum then return result end
-    return result >= minimum and result or minimum
+function sendMessage(destinationChannel, replyChannel, message)
+    return openModem().transmit(destinationChannel, replyChannel, message)
 end
 
-function openModem()
-    local modem = peripheral.wrap(constants.MODEM_SIDE)
-    modem.open(constants.CHANNEL)
-    return modem
+function sendMessageAndWaitResponse(destinationChannel, replyChannel, message)
+    sendMessage(destinationChannel, replyChannel, message)
+    openModem()
+    return waitForEvent('modem_message')
 end
 
 ---------------- Farm related ----------------
+
+local function cacheResponse(fileName, id, content)
+    local cachePath = string.format('cache/%s/%s.lua', id, fileName)
+    if (not fs.exists('cache')) then fs.makeDir('cache') end
+    local file = fs.open(cachePath, 'w')
+    file.write(content)
+    file.close()
+end
+
+local function getFromCache(fileName, id)
+    local cachePath = string.format('cache/%s/%s.lua', id, fileName)
+    if not fs.exists(cachePath) then return nil end
+    local file = fs.open(cachePath, 'r')
+    local result = file.readAll()
+    file.close()
+    return json.decode(result)
+end
 
 function createFarmInfo(farmType, channel, state, fluidContent, solidContent)
     local info = {
@@ -77,10 +116,8 @@ function requestFarmInfo(id)
     }
 
     print('\nRequesting farm info for id ' .. id .. '...')
-    local modem = functions.openModem()
-    modem.transmit(constants.CHANNEL_STORAGE, constants.CHANNEL, json.encode(request))
-
-    local response = functions.waitForEvent('modem_message')
+    local response = sendMessageAndWaitResponse(constants.CHANNEL_STORAGE, constants.CHANNEL, json.encode(request))
+    cacheResponse('farmInfo', id, response.message)
     print('Response: ' .. response.message)
 
     local result = json.decode(response.message)
@@ -88,19 +125,22 @@ function requestFarmInfo(id)
     return result or createFarmInfo('Placeholder', id, false, nil, nil)
 end
 
+function getFarmInfo(id)
+    return getFromCache('farmInfo', id) or requestFarmInfo(id)
+end
+
 function toggleFarmState(id)
-    local farmInfo = requestFarmInfo(id)
+    local farmInfo = getFarmInfo(id)
+
     if farmInfo.error then
-        print('Operation cancelled. ' .. result.message)
+        print('Operation cancelled. ' .. farmInfo.message)
     else
-        local newInfo = createFarmInfo(
-            farmInfo.farmType,
-            farmInfo.id,
-            not farmInfo.state,
-            farmInfo.content and farmInfo.content.fluid or nil,
-            farmInfo.content and farmInfo.content.solid or nil
-        )
-        local modem = openModem()
-        modem.transmit(constants.CHANNEL_STORAGE, constants.CHANNEL, json.encode(newInfo))
+        farmInfo.state = not farmInfo.state
+        local content = {
+            method = 'INSERT',
+            body = farmInfo
+        }
+        local response = sendMessageAndWaitResponse(constants.CHANNEL_STORAGE, constants.CHANNEL, json.encode(content))
+        cacheResponse('farmInfo', id, response.message)
     end
 end

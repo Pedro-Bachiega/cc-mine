@@ -28,8 +28,13 @@ else
 end
 
 local function createStartup()
+    local content = [[
+        shell.run('postBoot.lua')
+        shell.run('run.lua')
+    ]]
+
     local file = fs.open('startup.lua', 'w')
-    file.write(string.format('shell.run(\'run.lua\', \'-t\', \'%s\')'), computerType)
+    file.write(content)
     file.close()
 end
 
@@ -122,4 +127,4 @@ local function unpack()
 end
 
 unpack()
-shell.run('run.lua', '-t', computerType)
+shell.run('reboot')
