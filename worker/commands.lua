@@ -13,7 +13,7 @@ local function handleMessage(message)
     if message == 'updateInfo' then
         infoTable = updateInfo()
     else
-        infoTable = json.decode(response.message)
+        infoTable = json.decode(message)
     end
 
     if constants.MONITOR_SIDE ~= 'none' then display.writeFarmInfo(infoTable) end

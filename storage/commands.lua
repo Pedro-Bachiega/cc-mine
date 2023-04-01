@@ -3,19 +3,9 @@ os.loadAPI('functions.lua')
 os.loadAPI('json.lua')
 os.loadAPI('storage.lua')
 
-local function insert(id, content)
-    content = json.encode(content)
-    storage.insert(id, content)
-    print('\nInserting id: ' .. id)
-    return true
-end
-
 local function find(id, replyChannel)
     local response = storage.find(id)
-    if response then
-        print('\nFound for id: ' .. id)
-    else
-        print('\nNot found for id: ' .. id)
+    if not response then
         response = json.encode({
             error = 'NOT_FOUND',
             message = 'Not found for id: ' .. id
@@ -23,17 +13,25 @@ local function find(id, replyChannel)
     end
 
     sleep(1)
-    local modem = functions.openModem()
-    modem.transmit(replyChannel, constants.CHANNEL, response)
     print('Response: ' .. response)
+    local modem = functions.openModem()
+    print('Responding to channel: ' .. replyChannel)
+    modem.transmit(replyChannel, constants.CHANNEL, response)
     return true
 end
 
+local function insert(id, content)
+    content = json.encode(content)
+    storage.insert(id, content)
+    return find(id, id)
+end
+
 local function handleMessage(message, replyChannel)
+    print('\nRequest: ' .. message)
+
     local handled = false
 
     local request = json.decode(message)
-
     local method = request.method
     local body = request.body
     local id = body.id

@@ -3,6 +3,24 @@ os.loadAPI('json.lua')
 
 ---------------- Generic ----------------
 
+function argsToKnownTable(args)
+    local channel, computerType = nil
+
+    for index, value in ipairs(args) do
+        if value == '-t' or value == '--type' then
+            computerType = args[index + 1]
+        elseif value == '-c' or value == '--channel' then
+            channel = args[index + 1]
+        end
+    end
+
+    return {
+        channel = channel,
+        computerType = computerType
+    }
+end
+
+
 function waitForEvent(eventName)
     local event, modemSide, senderChannel, replyChannel, message, senderDistance = os.pullEvent(eventName)
 
@@ -58,7 +76,7 @@ function requestFarmInfo(id)
         }
     }
 
-    print('\nRequesting farm info...')
+    print('\nRequesting farm info for id ' .. id .. '...')
     local modem = functions.openModem()
     modem.transmit(constants.CHANNEL_STORAGE, constants.CHANNEL, json.encode(request))
 

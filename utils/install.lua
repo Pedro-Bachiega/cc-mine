@@ -1,15 +1,18 @@
 local args = {...}
 
 local function argsToKnownTable(args)
-    local computerType = nil
+    local channel, computerType = nil
 
     for index, value in ipairs(args) do
         if value == '-t' or value == '--type' then
             computerType = args[index + 1]
+        elseif value == '-c' or value == '--channel' then
+            channel = args[index + 1]
         end
     end
 
     return {
+        channel = channel,
         computerType = computerType
     }
 end
@@ -52,7 +55,7 @@ local function chooseSideFor(name, required)
 end
 
 local function chooseChannel()
-    print('\nInput the channel this computer use: ')
+    print('\nChannel this computer will use: ')
     return read()
 end
 
