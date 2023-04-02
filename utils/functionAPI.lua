@@ -1,35 +1,26 @@
 os.loadAPI('constants.lua')
-os.loadAPI('json.lua')
+os.loadAPI('jsonAPI.lua')
 
 ---------------- Generic ----------------
 
-function argsToKnownTable(args)
-    local channel, computerType = nil
-
-    for index, value in ipairs(args) do
-        if value == '-t' or value == '--type' then
-            computerType = args[index + 1]
-        elseif value == '-c' or value == '--channel' then
-            channel = args[index + 1]
-        end
-    end
-
-    return {
-        channel = channel,
-        computerType = computerType
-    }
-end
-
-function getTimestamp()
+function getTimestamp(timeOnly)
     local table = os.date("*t", timestamp) or os.date("%format", timestamp)
-    return string.format(
-        '%02d:%02d - %d/%d/%d',
-        table.hour,
-        table.min,
-        table.day,
-        table.month,
-        table.year
-    )
+    if timeOnly then
+        return string.format(
+            '%02d:%02d',
+            table.hour,
+            table.min
+        )
+    else
+        return string.format(
+            '%02d:%02d - %d/%d/%d',
+            table.hour,
+            table.min,
+            table.day,
+            table.month,
+            table.year
+        )
+    end
 end
 
 function floor(number, minimum)
@@ -44,6 +35,15 @@ end
 
 ---------------- File ----------------
 
+function appendToFile(fileName, content)
+    local mode = 'a'
+    if not fs.exists(fileName) then mode = 'w' end
+
+    local file = fs.open(fileName, mode)
+    file.write(mode == a and ('\n' .. content) or content)
+    file.close()
+end
+
 function toFile(fileName, content)
     local file = fs.open(fileName, 'w')
     file.write(content)
@@ -51,6 +51,8 @@ function toFile(fileName, content)
 end
 
 function fromFile(fileName)
+    if not fs.exists(fileName) then return nil end
+
     local file = fs.open(fileName, 'r')
     local content = file.readAll()
     file.close()
@@ -60,11 +62,26 @@ end
 ---------------- Json ----------------
 
 function fromJson(jsonString)
-    return json.decode(jsonString)
+    return jsonAPI.decode(jsonString)
 end
 
-function toJson(jsonString)
-    return json.encode(jsonString)
+function toJson(jsonString, pretty)
+    if pretty then return jsonAPI.encodePretty(jsonString) end
+    return jsonAPI.encode(jsonString)
+end
+
+---------------- Cache ----------------
+
+local function cacheResponse(fileName, id, content)
+    local cachePath = string.format('cache/%s/%s.lua', id, fileName)
+    if not fs.exists('cache') then fs.makeDir('cache') end
+    toFile(cachePath, content)
+end
+
+local function getFromCache(fileName, id)
+    local cachePath = string.format('cache/%s/%s.lua', id, fileName)
+    if not fs.exists(cachePath) then return nil end
+    return fromJson(fromFile(cachePath))
 end
 
 ---------------- Modem ----------------
@@ -99,19 +116,16 @@ function sendMessageAndWaitResponse(message, destinationChannel, replyChannel)
     return waitForEvent('modem_message')
 end
 
+---------------- Logs ----------------
+
+function sendLogs(message, channels)
+    local content = toJson({command = 'write', body = {message = message}})
+    for k, channel in pairs(channels) do
+        sendMessage(content, channel.channel)
+    end
+end
+
 ---------------- Farm related ----------------
-
-local function cacheResponse(fileName, id, content)
-    local cachePath = string.format('cache/%s/%s.lua', id, fileName)
-    if not fs.exists('cache') then fs.makeDir('cache') end
-    toFile(cachePath, content)
-end
-
-local function getFromCache(fileName, id)
-    local cachePath = string.format('cache/%s/%s.lua', id, fileName)
-    if not fs.exists(cachePath) then return nil end
-    return json.decode(fromFile(cachePath))
-end
 
 function createFarmInfo(farmType, channel, state, fluidContent, solidContent)
     local info = {
@@ -142,11 +156,11 @@ function requestFarmInfo(id)
     }
 
     print('\nRequesting farm info for id ' .. id .. '...')
-    local response = sendMessageAndWaitResponse(json.encode(request), constants.CHANNEL_STORAGE)
+    local response = sendMessageAndWaitResponse(toJson(request), constants.CHANNEL_STORAGE)
     cacheResponse('farmInfo', id, response.message)
     print('Response: ' .. response.message)
 
-    local result = json.decode(response.message)
+    local result = fromJson(response.message)
     if result then
         if result.error then
             print('Error: ' .. result.message)
@@ -173,7 +187,7 @@ function toggleFarmState(id)
             method = 'INSERT',
             body = farmInfo
         }
-        local response = sendMessageAndWaitResponse(json.encode(content), constants.CHANNEL_STORAGE)
+        local response = sendMessageAndWaitResponse(toJson(content), constants.CHANNEL_STORAGE)
         cacheResponse('farmInfo', id, response.message)
         return response
     end

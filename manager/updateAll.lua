@@ -1,26 +1,18 @@
-os.loadAPI('channels.lua')
+os.loadAPI('channelAPI.lua')
 os.loadAPI('constants.lua')
-os.loadAPI('functions.lua')
-
-local mapByChannelType = {}
-
-for k, value in pairs(channels.ALL) do
-    if not mapByChannelType[value.type] then
-        mapByChannelType[value.type] = {}
-    end
-    table.insert(mapByChannelType[value.type], value)
-end
+os.loadAPI('functionAPI.lua')
 
 local function update(list)
+    if not list then return end
     for k, value in pairs(list) do
         print('Updating ' .. value.name)
-        functions.sendMessage('update', value.channel)
+        functionAPI.sendMessage('update', value.channel)
         sleep(0.5)
     end
 end
 
-update(mapByChannelType['storage'])
-update(mapByChannelType['worker'])
-update(mapByChannelType['manager'])
+local channels = channelAPI.listChannels()
+table.sort(channels, function(c1, c2) return c1.type.priority < c2.type.priority end)
+update(channels)
 
 shell.run('update.lua')

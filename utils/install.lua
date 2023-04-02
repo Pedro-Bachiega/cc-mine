@@ -22,7 +22,7 @@ local function chooseComputerType()
     local types = {'worker', 'storage', 'manager', 'log'}
     print('\nSelect the computer type:')
 
-    for index, value in ipairs(sidesTable) do
+    for index, value in ipairs(types) do
         print(tostring(index) .. ') ' .. value)
     end
 
@@ -30,7 +30,7 @@ local function chooseComputerType()
     local validResult = result > 0 and result <= #types
     if not validResult then result = #types end
 
-    return result
+    return types[result]
 end
 
 local function chooseSideFor(name, required)

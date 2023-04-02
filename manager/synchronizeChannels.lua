@@ -1,17 +1,19 @@
-if not fs.exists('channels.lua') then error('You don\'t have a channels file') end
+if not fs.exists('channels.lua') then
+    shell.run('importChannels.lua')
+    return
+end
 
-os.loadAPI('channels.lua')
-os.loadAPI('functions.lua')
+os.loadAPI('channelAPI.lua')
+os.loadAPI('functionAPI.lua')
 
-local content = functions.fromFile('channels.lua')
-local request = functions.toJson({
+local content = functionAPI.fromFile('channels.lua')
+local request = functionAPI.toJson({
     command = 'synchronizeChannels',
     body = content
 })
 
-for k, value in pairs(channels.ALL) do
-    if value.type == 'manager' then
-        print('Updating ' .. value.name)
-        functions.sendMessage(request, value.channel)
-    end
+local managers = channelAPI.listChannels(channelAPI.channelTypes.manager.name)
+for k, value in pairs(managers) do
+    print('Updating ' .. value.name)
+    functionAPI.sendMessage(request, value.channel)
 end

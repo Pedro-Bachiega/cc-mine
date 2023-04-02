@@ -1,51 +1,42 @@
-os.loadAPI('functions.lua')
+os.loadAPI('functionAPI.lua')
+os.loadAPI('uiAPI.lua')
 
 function writeFarmInfo(infoTable)
     monitor = peripheral.wrap(constants.MONITOR_SIDE)
 
     function monitor:writeFarmType(info, x, y)
-        self.setCursorPos(x, y)
-        self.setTextColor(colors.purple)
-        self.write('Farm type: ')
-        self.setTextColor(colors.yellow)
-        self.write(info)
+        x = uiAPI.drawAt(self, 'Farm type: ', x, y, colors.purple)
+        uiAPI.drawAt(self, info, x, y, colors.yellow)
     end
     
     function monitor:writeFarmState(state, x, y)
-        self.setCursorPos(x, y)
-        self.setTextColor(colors.white)
-        self.write('State: ')
-        self.setTextColor(state and colors.green or colors.red)
-        self.write(state and 'ON' or 'OFF')
+        x = uiAPI.drawAt(self, 'State: ', x, y, colors.white)
+        uiAPI.drawAt(
+            self,
+            state and 'ON' or 'OFF',
+            x,
+            y,
+            state and colors.green or colors.red
+        )
     end
 
     function monitor:writeFarmContents(label, contents, infoColor, x, y)
-        self.setCursorPos(x, y)
-        self.setTextColor(colors.white)
-        self.write(label)
-        self.setTextColor(infoColor)
-        self.write(contents)
+        x = uiAPI.drawAt(self, label, x, y, colors.white)
+        uiAPI.drawAt(self, contents, x, y, infoColor)
     end
     
     function monitor:writeFarmChannel(x, y)
-        self.setCursorPos(x, y)
-        self.setTextColor(colors.white)
-        self.write('Channel: ')
-        self.setTextColor(colors.blue)
-        self.write(tostring(constants.CHANNEL))
+        x = uiAPI.drawAt(self, 'Channel: ', x, y, colors.white)
+        uiAPI.drawAt(self, tostring(constants.CHANNEL), x, y, colors.blue)
     end
     
     function monitor:writeTimestamp(x, y)
-        local text = 'Updated at: ' .. functions.getTimestamp()
-        self.setCursorPos(x, y)
-        self.setTextColor(colors.lightGray)
-        self.write(text)
+        local text = 'Updated at: ' .. functionAPI.getTimestamp()
+        uiAPI.drawAt(self, text, x, y, colors.lightGray)
     end
 
-    function monitor:drawDivider(size, x, y)
-        self.setCursorPos(x, y)
-        self.setTextColor(colors.white)
-        self.write(string.rep('-', size))
+    function monitor:drawDivider(y)
+        uiAPI.drawHorizontalDividerAt(self, y)
     end
 
     local maxX, maxY = monitor.getSize()
@@ -61,7 +52,7 @@ function writeFarmInfo(infoTable)
     monitor:writeFarmState(infoTable.state, minX, 3)
 
     -- Didider - Line 4
-    monitor:drawDivider(maxX, 1, 4)
+    monitor:drawDivider(4)
 
     -- Drops - Line 6+
     if infoTable.content  then
@@ -90,7 +81,7 @@ function writeFarmInfo(infoTable)
 
 
     -- Didider
-    monitor:drawDivider(maxX, 1, maxY - 3)
+    monitor:drawDivider(maxY - 3)
 
     -- Channel and Time - Last Line
     monitor:writeFarmChannel(minX, maxY - 2)

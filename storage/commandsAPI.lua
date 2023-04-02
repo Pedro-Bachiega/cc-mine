@@ -1,11 +1,11 @@
 os.loadAPI('constants.lua')
-os.loadAPI('functions.lua')
-os.loadAPI('storage.lua')
+os.loadAPI('functionAPI.lua')
+os.loadAPI('storageAPI.lua')
 
 local function find(id, replyChannel)
-    local response = storage.find(id)
+    local response = storageAPI.find(id)
     if not response then
-        response = functions.toJson({
+        response = functionAPI.toJson({
             error = 'NOT_FOUND',
             message = 'Not found for id: ' .. id
         })
@@ -14,17 +14,17 @@ local function find(id, replyChannel)
     sleep(0.2)
     print('Response: ' .. response)
     print('Responding to channel: ' .. replyChannel)
-    functions.sendMessage(response, replyChannel)
+    functionAPI.sendMessage(response, replyChannel)
     return response
 end
 
 local function insert(id, replyChannel, content)
-    content = functions.toJson(content)
-    storage.insert(id, content)
+    content = functionAPI.toJson(content)
+    storageAPI.insert(id, content)
 
     print(string.format('Updating channels: [%d, %d]', id, replyChannel))
-    functions.sendMessage(content, id)
-    functions.sendMessage(content, replyChannel)
+    functionAPI.sendMessage(content, id)
+    functionAPI.sendMessage(content, replyChannel)
 end
 
 local function handleMessage(message, replyChannel)
@@ -32,7 +32,7 @@ local function handleMessage(message, replyChannel)
 
     local handled = false
 
-    local request = functions.fromJson(message)
+    local request = functionAPI.fromJson(message)
     local method = request.method
     local body = request.body
     local id = body.id

@@ -1,6 +1,6 @@
 if pocket then return end
 
-os.loadAPI('functions.lua')
+os.loadAPI('functionAPI.lua')
 
 local function clearCache()
     if fs.exists('cache') then fs.delete('cache') end
@@ -12,20 +12,20 @@ end
 
 local function exportChannels(content, replyChannel)
     print('\nExporting channels')
-    local content = functions.fromFile('channels.lua')
+    local content = functionAPI.fromFile('channels.lua')
     local response = {body = content}
-    functions.sendMessage(functions.toJson(response), replyChannel)
+    functionAPI.sendMessage(functionAPI.toJson(response), replyChannel)
 end
 
 local function updateChannels(content)
     print('\nSynchronizing channels')
-    functions.toFile('channels.lua', content)
+    functionAPI.toFile('channels.lua', content)
 end
 
 local function handleMessage(message, replyChannel)
     if message == 'update' then return true end
 
-    local request = functions.fromJson(message)
+    local request = functionAPI.fromJson(message)
     local command = request.command
     if command == 'synchronizeChannels' then
         updateChannels(request.body)
@@ -44,7 +44,7 @@ local managerId = multishell.launch({}, 'manager.lua')
 multishell.setTitle(managerId, 'Managing')
 
 while true do
-    local eventTable = functions.waitForEvent('modem_message')
+    local eventTable = functionAPI.waitForEvent('modem_message')
     if handleMessage(eventTable.message, eventTable.replyChannel) then break end
 end
 
