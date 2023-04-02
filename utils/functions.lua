@@ -20,18 +20,6 @@ function argsToKnownTable(args)
     }
 end
 
-local function openModem()
-    local modem = peripheral.wrap(constants.MODEM_SIDE)
-    modem.open(constants.CHANNEL)
-    return modem
-end
-
-function round(number, minimum)
-    local result = math.floor(number + 0.5)
-    if not minimum then return result end
-    return result >= minimum and result or minimum
-end
-
 function getTimestamp()
     local table = os.date("*t", timestamp) or os.date("%format", timestamp)
     return string.format(
@@ -42,6 +30,45 @@ function getTimestamp()
         table.month,
         table.year
     )
+end
+
+function round(number, minimum)
+    local result = math.floor(number + 0.5)
+    if not minimum then return result end
+    return result >= minimum and result or minimum
+end
+
+---------------- File ----------------
+
+function toFile(fileName, content)
+    local file = fs.open(fileName, 'w')
+    file.write(content)
+    file.close()
+end
+
+function fromFile(fileName)
+    local file = fs.open(fileName, 'r')
+    local content = file.readAll()
+    file.close()
+    return content
+end
+
+---------------- Json ----------------
+
+function fromJson(jsonString)
+    return json.decode(jsonString)
+end
+
+function toJson(jsonString)
+    return json.encode(jsonString)
+end
+
+---------------- Modem ----------------
+
+local function openModem()
+    local modem = peripheral.wrap(constants.MODEM_SIDE)
+    modem.open(constants.CHANNEL)
+    return modem
 end
 
 function waitForEvent(eventName)
@@ -58,12 +85,13 @@ function waitForEvent(eventName)
     }
 end
 
-function sendMessage(destinationChannel, replyChannel, message)
+function sendMessage(message, destinationChannel, replyChannel)
+    if not replyChannel then replyChannel = constants.CHANNEL end
     return openModem().transmit(destinationChannel, replyChannel, message)
 end
 
-function sendMessageAndWaitResponse(destinationChannel, replyChannel, message)
-    sendMessage(destinationChannel, replyChannel, message)
+function sendMessageAndWaitResponse(message, destinationChannel, replyChannel)
+    sendMessage(message, destinationChannel, replyChannel)
     openModem()
     return waitForEvent('modem_message')
 end
@@ -72,19 +100,14 @@ end
 
 local function cacheResponse(fileName, id, content)
     local cachePath = string.format('cache/%s/%s.lua', id, fileName)
-    if (not fs.exists('cache')) then fs.makeDir('cache') end
-    local file = fs.open(cachePath, 'w')
-    file.write(content)
-    file.close()
+    if not fs.exists('cache') then fs.makeDir('cache') end
+    toFile(cachePath, content)
 end
 
 local function getFromCache(fileName, id)
     local cachePath = string.format('cache/%s/%s.lua', id, fileName)
     if not fs.exists(cachePath) then return nil end
-    local file = fs.open(cachePath, 'r')
-    local result = file.readAll()
-    file.close()
-    return json.decode(result)
+    return json.decode(fromFile(cachePath))
 end
 
 function createFarmInfo(farmType, channel, state, fluidContent, solidContent)
@@ -116,7 +139,7 @@ function requestFarmInfo(id)
     }
 
     print('\nRequesting farm info for id ' .. id .. '...')
-    local response = sendMessageAndWaitResponse(constants.CHANNEL_STORAGE, constants.CHANNEL, json.encode(request))
+    local response = sendMessageAndWaitResponse(json.encode(request), constants.CHANNEL_STORAGE)
     cacheResponse('farmInfo', id, response.message)
     print('Response: ' .. response.message)
 
@@ -140,7 +163,7 @@ function toggleFarmState(id)
             method = 'INSERT',
             body = farmInfo
         }
-        local response = sendMessageAndWaitResponse(constants.CHANNEL_STORAGE, constants.CHANNEL, json.encode(content))
+        local response = sendMessageAndWaitResponse(json.encode(content), constants.CHANNEL_STORAGE)
         cacheResponse('farmInfo', id, response.message)
     end
 end

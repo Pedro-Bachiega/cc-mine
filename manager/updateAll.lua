@@ -4,7 +4,7 @@ os.loadAPI('functions.lua')
 
 for k, value in pairs(channels.ALL) do
     print('Updating ' .. value.name)
-    functions.sendMessage(value.channel, constants.CHANNEL, 'update')
+    functions.sendMessage('update', value.channel)
     sleep(0.2)
 end
 

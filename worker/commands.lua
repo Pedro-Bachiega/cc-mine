@@ -1,7 +1,6 @@
 os.loadAPI('constants.lua')
 os.loadAPI('display.lua')
 os.loadAPI('functions.lua')
-os.loadAPI('json.lua')
 
 local function updateInfo()
     return functions.requestFarmInfo(constants.CHANNEL)
@@ -13,7 +12,7 @@ local function handleMessage(message)
     if message == 'updateInfo' then
         infoTable = updateInfo()
     else
-        infoTable = json.decode(message)
+        infoTable = functions.fromJson(message)
     end
 
     if constants.MONITOR_SIDE ~= 'none' then display.writeFarmInfo(infoTable) end
