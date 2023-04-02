@@ -96,7 +96,6 @@ end
 
 function sendMessageAndWaitResponse(message, destinationChannel, replyChannel)
     sendMessage(message, destinationChannel, replyChannel)
-    openModem()
     return waitForEvent('modem_message')
 end
 

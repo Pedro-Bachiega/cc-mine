@@ -1,30 +1,10 @@
 local args = {...}
+local computerType = nil
 
-local function argsToKnownTable(args)
-    local channel, computerType = nil
-
-    for index, value in ipairs(args) do
-        if value == '-t' or value == '--type' then
-            computerType = args[index + 1]
-        elseif value == '-c' or value == '--channel' then
-            channel = args[index + 1]
-        end
+for index, value in ipairs(args) do
+    if value == '-t' or value == '--type' then
+        computerType = args[index + 1]
     end
-
-    return {
-        channel = channel,
-        computerType = computerType
-    }
-end
-
-local argsTable = argsToKnownTable(args)
-local computerType = argsTable.computerType
-
-if fs.exists('constants.lua') then
-    os.loadAPI('constants.lua')
-    computerType = constants.COMPUTER_TYPE or computerType
-else
-    constants = {}
 end
 
 local function createStartup()
@@ -36,6 +16,21 @@ local function createStartup()
     local file = fs.open('startup.lua', 'w')
     file.write(content)
     file.close()
+end
+
+local function chooseComputerType()
+    local types = {'worker', 'storage', 'manager', 'log'}
+    print('\nSelect the computer type:')
+
+    for index, value in ipairs(sidesTable) do
+        print(tostring(index) .. ') ' .. value)
+    end
+
+    local result = tonumber(read())
+    local validResult = result > 0 and result <= #types
+    if not validResult then result = #types end
+
+    return result
 end
 
 local function chooseSideFor(name, required)
@@ -53,7 +48,7 @@ local function chooseSideFor(name, required)
     if not validResult and required then
         error('Invalid choice')
     elseif not validResult then
-        result = 6
+        result = #sidesTable
     end
 
     return sidesTable[result]
@@ -125,6 +120,15 @@ local function unpack()
     writeConstants()
     createStartup()
 end
+
+if fs.exists('constants.lua') then
+    os.loadAPI('constants.lua')
+    computerType = constants.COMPUTER_TYPE or computerType
+else
+    constants = {}
+end
+
+if not computerType then computerType = chooseComputerType() end
 
 unpack()
 shell.run('reboot')
