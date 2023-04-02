@@ -32,10 +32,14 @@ function getTimestamp()
     )
 end
 
-function round(number, minimum)
-    local result = math.floor(number + 0.5)
+function floor(number, minimum)
+    local result = math.floor(number)
     if not minimum then return result end
     return result >= minimum and result or minimum
+end
+
+function round(number, minimum)
+    return floor(number + 0.5)
 end
 
 ---------------- File ----------------
@@ -144,7 +148,13 @@ function requestFarmInfo(id)
     print('Response: ' .. response.message)
 
     local result = json.decode(response.message)
-    if result and result.error then print('Error: ' .. result.message) end
+    if result then
+        if result.error then
+            print('Error: ' .. result.message)
+        else
+            sendMessage(response.message, id)
+        end
+    end
     return result or createFarmInfo('Placeholder', id, false, nil, nil)
 end
 
@@ -157,6 +167,7 @@ function toggleFarmState(id)
 
     if farmInfo.error then
         print('Operation cancelled. ' .. farmInfo.message)
+        return nil
     else
         farmInfo.state = not farmInfo.state
         local content = {
@@ -165,5 +176,6 @@ function toggleFarmState(id)
         }
         local response = sendMessageAndWaitResponse(json.encode(content), constants.CHANNEL_STORAGE)
         cacheResponse('farmInfo', id, response.message)
+        return response
     end
 end

@@ -2,6 +2,14 @@ if pocket then return end
 
 os.loadAPI('functions.lua')
 
+local function clearCache()
+    if fs.exists('cache') then fs.delete('cache') end
+end
+
+local function update()
+    shell.run('update')
+end
+
 local function updateChannels(content)
     print('\nSynchronizing channels')
     functions.toFile('channels.lua', content)
@@ -14,10 +22,13 @@ local function handleMessage(message)
     local command = request.command
     if command == 'synchronizeChannels' then
         updateChannels(request.body)
+        return true
     end
 
     return false
 end
+
+clearCache()
 
 local managerId = multishell.launch({}, 'manager.lua')
 multishell.setTitle(managerId, 'Managing')
@@ -27,4 +38,4 @@ while true do
     if handleMessage(eventTable.message) then break end
 end
 
-shell.run('update')
+update()

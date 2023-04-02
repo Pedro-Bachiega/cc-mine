@@ -10,12 +10,11 @@ function create(text)
 		y = 1,
 		width = 0,
 		height = 1,
-		horizontalPadding = 2,
-		verticalPadding = 2,
+		horizontalPadding = 0,
+		verticalPadding = 0,
 		text = tostring(text) or "None",
 		bgcol = colors.lime,
-		blinkCol = colors.red,
-		align = "c",
+		alignment = "c",
 		active = true,
 		callback = nil,
 		ret = nil,
@@ -43,15 +42,15 @@ function create(text)
 		return this
 	end
   
-	function this.setAlign(align)
-		if align == "center" then
-			this.align = "c"
-		elseif align == "left" then
-			this.align = "l"
-		elseif align == "right" then
-			this.align = "r"
+	function this.setAlignment(alignment)
+		if alignment == "center" then
+			this.alignment = "c"
+		elseif alignment == "left" then
+			this.alignment = "l"
+		elseif alignment == "right" then
+			this.alignment = "r"
 		else 
-			error('Incorrect slign set! ')
+			error('Incorrect alignment set! ')
 		end
 		return this
 	end
@@ -88,11 +87,6 @@ function create(text)
   
 	function this.setColor(color)
 		this.bgcol = color
-		return this
-	end
-  
-	function this.setBlinkColor(color)
-		this.blinkCol = color
 		return this
 	end
   
@@ -139,14 +133,14 @@ function create(text)
 		local bg = _locales.mon.getBackgroundColor()
 		local tc = _locales.mon.getTextColor()
 
-		if this.align == "l" then
-			xpos = this.x
-		end
-		if this.align == "r" then
-			xpos = this.x + paddedWidth - #this.text
+		if this.alignment == "l" then
+			xpos = this.x + (this.horizontalPadding / 2)
+		elseif this.alignment == "r" then
+			xpos = this.x + paddedWidth - #this.text - (this.horizontalPadding / 2)
 		end
 
 		if #this.text > paddedWidth then
+			print(string.format('Size %d width %d', #this.text, paddedWidth))
 			xpos = this.x
 			t = string.sub(t, 1, paddedWidth - 3)..".."..string.sub(t, -1)
 		end
@@ -172,18 +166,7 @@ function create(text)
 	end
   
 	function this.draw()
-		for line = this.y, this.getHeight() do
-			_locales.mon.setCursorPos(this.x, line)
-			_locales.mon.clearLine()
-		end
-
 		this.drawWrapper(this.bgcol)
-	end
-
-	function this.blink()
-		this.drawWrapper(this.blinkCol)
-		sleep(0.2)
-		this.draw()
 	end
 
 	return this
@@ -221,7 +204,6 @@ function await(...)
 	for i in pairs(array) do
 		local button = array[i]
 		if button.wasClicked(x, y) then
-			button.blink()
 			if button.ret then return button.ret end
 			button.fireEvent()
 		end
