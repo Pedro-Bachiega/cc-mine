@@ -31,5 +31,5 @@ function drawFooter(monitor, text)
 end
 
 function drawTimestampFooter(monitor)
-    return drawFooter(monitor, 'Updated at: ' .. functionAPI.getTimestamp())
+    return drawFooter(monitor, 'Updated at: ' .. functionAPI.getDateTime())
 end

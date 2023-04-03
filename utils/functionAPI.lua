@@ -3,24 +3,48 @@ os.loadAPI('jsonAPI.lua')
 
 ---------------- Generic ----------------
 
-function getTimestamp(timeOnly)
-    local table = os.date("*t", timestamp) or os.date("%format", timestamp)
-    if timeOnly then
+local function getTimestampTable()
+    return os.date("*t", timestamp) or os.date("%format", timestamp)
+end
+
+function getDateTime()
+    local table = getTimestampTable()
+    return string.format(
+        '%02d:%02d - %d/%d/%d',
+        table.hour,
+        table.min,
+        table.day,
+        table.month,
+        table.year
+    )
+end
+
+function getDate(pretty)
+    local table = getTimestampTable()
+    if pretty then
         return string.format(
-            '%02d:%02d',
-            table.hour,
-            table.min
-        )
-    else
-        return string.format(
-            '%02d:%02d - %d/%d/%d',
-            table.hour,
-            table.min,
+            '%d/%d/%d',
             table.day,
             table.month,
             table.year
         )
+    else
+        return string.format(
+            '%d-%d-%d',
+            table.year,
+            table.month,
+            table.day
+        )
     end
+end
+
+function getTime()
+    local table = getTimestampTable()
+    return string.format(
+        '%02d:%02d',
+        table.hour,
+        table.min
+    )
 end
 
 function floor(number, minimum)
@@ -116,15 +140,6 @@ function sendMessageAndWaitResponse(message, destinationChannel, replyChannel)
     return waitForEvent('modem_message')
 end
 
----------------- Logs ----------------
-
-function sendLogs(message, channels)
-    local content = toJson({command = 'write', body = {message = message}})
-    for k, channel in pairs(channels) do
-        sendMessage(content, channel.channel)
-    end
-end
-
 ---------------- Farm related ----------------
 
 function createFarmInfo(farmType, channel, state, fluidContent, solidContent)
@@ -142,14 +157,14 @@ function createFarmInfo(farmType, channel, state, fluidContent, solidContent)
     end
 
     return {
-        method = 'INSERT',
+        command = 'insert',
         body = info
     }
 end
 
 function requestFarmInfo(id)
     local request = {
-        method = 'FIND',
+        command = 'find',
         body = {
             id = id
         }
@@ -171,8 +186,11 @@ function requestFarmInfo(id)
     return result or createFarmInfo('Placeholder', id, false, nil, nil)
 end
 
-function getFarmInfo(id)
-    return getFromCache('farmInfo', id) or requestFarmInfo(id)
+function getFarmInfo(id, skipCache)
+    local info = nil
+    if not skipCache then info = getFromCache('farmInfo', id) end
+    if not info then info = requestFarmInfo(id) end
+    return info
 end
 
 function toggleFarmState(id)
@@ -184,9 +202,10 @@ function toggleFarmState(id)
     else
         farmInfo.state = not farmInfo.state
         local content = {
-            method = 'INSERT',
+            command = 'insert',
             body = farmInfo
         }
+        print(toJson(content))
         local response = sendMessageAndWaitResponse(toJson(content), constants.CHANNEL_STORAGE)
         cacheResponse('farmInfo', id, response.message)
         return response

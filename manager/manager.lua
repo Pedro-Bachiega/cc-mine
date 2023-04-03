@@ -2,7 +2,12 @@ os.loadAPI('buttonAPI.lua')
 os.loadAPI('channelAPI.lua')
 os.loadAPI('constants.lua')
 os.loadAPI('functionAPI.lua')
+os.loadAPI('logAPI.lua')
+os.loadAPI('managerAPI.lua')
 os.loadAPI('uiAPI.lua')
+
+local firstRun = true
+local monitor = peripheral.wrap(constants.MONITOR_SIDE)
 
 local function getButtonColor(state)
     return state and colors.green or colors.red
@@ -13,8 +18,8 @@ local function onButtonClick(buttonClicked)
         local args = buttonClicked.args
         if args.state then args.state = not args.state end
 
-        print('Toggling state on channel ' .. args.channel)
-        local farmInfo = functionAPI.toggleFarmState(args.channel)
+        logAPI.log('Toggling state on channel ' .. args.channel.name)
+        local farmInfo = functionAPI.toggleFarmState(args.channel.channel)
         buttonClicked.args.state = farmInfo.state
         buttonClicked.setColor(getButtonColor(farmInfo.state)).draw()
     end
@@ -30,7 +35,7 @@ end
 
 local function createButtons(monitor, initialX, initialY, finalY, monWidth, monHeight)
     local buttonTable = {}
-    local workers = channelAPI.listChannels(channelAPI.channelTypes.worker.name)
+    local workers = channelAPI.listWorkerChannels()
 
     local x = initialX
     local y = initialY
@@ -39,7 +44,7 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
     local margin = getMargin(finalY - initialY - padding)
 
     for key, value in pairs(workers) do
-        local farmInfo = functionAPI.getFarmInfo(value.channel)
+        local farmInfo = functionAPI.getFarmInfo(value.channel, firstRun)
         local newButton = buttonAPI.create(farmInfo.farmType or value.name)
             .setHorizontalPadding(padding)
             .setVerticalPadding(padding)
@@ -47,7 +52,7 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
             .setPos(x, y)
             .setArgs({
                 state = farmInfo.state or false,
-                channel = farmInfo.id or value.channel
+                channel = value
             })
 
         local atBottom = (newButton.y + newButton.getHeight()) > finalY
@@ -73,10 +78,11 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
             .setColor(getButtonColor(b.args.state))
     end
 
+    firstRun = false
     return buttonTable
 end
 
-local monitor = peripheral.wrap(constants.MONITOR_SIDE)
+managerAPI.clearCache()
 
 while true do
     monitor.clear()
@@ -84,5 +90,6 @@ while true do
     local initialX = 2
     local initialY = uiAPI.drawHeader(monitor, 'Farms: ')
     local finalY = uiAPI.drawTimestampFooter(monitor)
-    buttonAPI.await(createButtons(monitor, initialX, initialY, finalY, monWidth, monHeight))
+    local buttons = createButtons(monitor, initialX, initialY, finalY, monWidth, monHeight)
+    buttonAPI.await(buttons)
 end

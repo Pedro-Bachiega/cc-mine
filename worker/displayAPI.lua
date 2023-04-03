@@ -31,7 +31,7 @@ function writeFarmInfo(infoTable)
     end
     
     function monitor:writeTimestamp(x, y)
-        local text = 'Updated at: ' .. functionAPI.getTimestamp()
+        local text = 'Updated at: ' .. functionAPI.getDateTime()
         uiAPI.drawAt(self, text, x, y, colors.lightGray)
     end
 

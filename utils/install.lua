@@ -131,4 +131,8 @@ end
 if not computerType then computerType = chooseComputerType() end
 
 unpack()
+
+if not constants then os.loadAPI('constants.lua') end
+os.loadAPI('logAPI.lua')
+logAPI.log(string.format('Installing %s', computerType))
 shell.run('reboot')

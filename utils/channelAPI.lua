@@ -58,6 +58,32 @@ function listChannels(channelType)
     return result
 end
 
+function findChannel(channelNumber)
+    for key, value in pairs(listChannels()) do
+        if value.channel == channelNumber then
+            return value
+        end
+    end
+
+    return nil
+end
+
+function listLogChannels()
+    return listChannels(channelTypes.log.name)
+end
+
+function listManagerChannels()
+    return listChannels(channelTypes.manager.name)
+end
+
+function listStorageChannels()
+    return listChannels(channelTypes.storage.name)
+end
+
+function listWorkerChannels()
+    return listChannels(channelTypes.worker.name)
+end
+
 function log(name, channel)
     return buildChannel(name, channelTypes.log, channel)
 end

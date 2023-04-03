@@ -5,6 +5,7 @@ end
 
 os.loadAPI('channelAPI.lua')
 os.loadAPI('functionAPI.lua')
+os.loadAPI('logAPI.lua')
 
 local content = functionAPI.fromFile('channels.lua')
 local request = functionAPI.toJson({
@@ -12,8 +13,9 @@ local request = functionAPI.toJson({
     body = content
 })
 
-local managers = channelAPI.listChannels(channelAPI.channelTypes.manager.name)
-for k, value in pairs(managers) do
+logAPI.log('Synchronizing channels')
+local machines = channelAPI.listChannels()
+for k, value in pairs(machines) do
     print('Updating ' .. value.name)
     functionAPI.sendMessage(request, value.channel)
 end
