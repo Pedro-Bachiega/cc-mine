@@ -1,11 +1,11 @@
 os.loadAPI('functionAPI.lua')
 
-function insert(id, content)
+function insert(channel, content)
     if not fs.exists('data') then fs.makeDir('data') end
-    functionAPI.toFile('data/' .. id .. '.lua', content)
+    functionAPI.toFile('data/' .. channel .. '.lua', content)
 end
 
-function find(id)
-    if not fs.exists('data') or not fs.exists('data/' .. id .. '.lua') then return nil end
-    return functionAPI.fromFile('data/' .. id .. '.lua')
+function find(channel)
+    if not fs.exists('data') or not fs.exists('data/' .. channel .. '.lua') then return nil end
+    return functionAPI.fromFile('data/' .. channel .. '.lua')
 end

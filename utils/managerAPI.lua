@@ -1,6 +1,4 @@
-os.loadAPI('channelAPI.lua')
 os.loadAPI('functionAPI.lua')
-os.loadAPI('logAPI.lua')
 
 function clearCache()
     local content = functionAPI.toJson({command = 'clearCache'})

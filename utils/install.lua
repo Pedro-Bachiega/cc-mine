@@ -9,8 +9,14 @@ end
 
 local function createStartup()
     local content = [[
-        shell.run('postBoot.lua')
-        shell.run('run.lua')
+if not constants then os.loadAPI('constants.lua') end
+if not channelAPI then os.loadAPI('channelAPI.lua') end
+if not logAPI then os.loadAPI('logAPI.lua') end
+
+channelAPI.importChannelsIfNeeded()
+
+shell.run('postBoot.lua')
+shell.run('run.lua')
     ]]
 
     local file = fs.open('startup.lua', 'w')
@@ -119,20 +125,22 @@ local function unpack()
 
     writeConstants()
     createStartup()
+
+    if not constants then os.loadAPI('constants.lua') end
+    if not channelAPI then os.loadAPI('channelAPI.lua') end
+    local channel = channelAPI.channelFromType(computerType, os.getComputerLabel(), constants.CHANNEL)
+    channelAPI.registerChannel(channel)
+
+    if not logAPI then os.loadAPI('logAPI.lua') end
+    logAPI.log(string.format('Installing %s', computerType))
 end
 
 if fs.exists('constants.lua') then
     os.loadAPI('constants.lua')
     computerType = constants.COMPUTER_TYPE or computerType
-else
-    constants = {}
 end
 
 if not computerType then computerType = chooseComputerType() end
 
 unpack()
-
-if not constants then os.loadAPI('constants.lua') end
-os.loadAPI('logAPI.lua')
-logAPI.log(string.format('Installing %s', computerType))
 shell.run('reboot')

@@ -1,5 +1,3 @@
-os.loadAPI('constants.lua')
-
 local _locales = {
 	mon = peripheral.wrap(constants.MONITOR_SIDE)
 }
@@ -167,6 +165,12 @@ function create(text)
   
 	function this.draw()
 		this.drawWrapper(this.bgcol)
+	end
+
+	function this.blink(blinkColor)
+		this.drawWrapper(blinkColor)
+		sleep(0.2)
+		this.draw()
 	end
 
 	return this

@@ -1,4 +1,5 @@
 os.loadAPI('functionAPI.lua')
+os.loadAPI('logAPI.lua')
 
 channelTypes = {
     log = {
@@ -18,6 +19,21 @@ channelTypes = {
         priority = 1000
     }
 }
+
+function importChannels()
+    local basePanelChannel = 999
+    local request = functionAPI.toJson({command = 'exportChannels'})
+    local response = functionAPI.sendMessageAndWaitResponse(request, basePanelChannel)
+    local decodedResponse = functionAPI.fromJson(response.message)
+
+    functionAPI.toFile('channels.lua', decodedResponse.body)
+    print('Channels imported')
+end
+
+function importChannelsIfNeeded()
+    local needed = not fs.exists('channels.lua')
+    if needed then importChannels() end
+end
 
 local function buildChannel(name, channelType, channel)
     return {
@@ -42,6 +58,8 @@ function createChannel(channel)
 end
 
 function listChannels(channelType)
+    importChannelsIfNeeded()
+
     local content = functionAPI.fromFile('channels.lua')
     if not content then return {} end
 
@@ -98,4 +116,41 @@ end
 
 function worker(name, channel)
     return buildChannel(name, channelTypes.worker, channel)
+end
+
+function channelFromType(channelType, name, channelValue)
+    if channelType == 'log' then
+        return log(name, channelValue)
+    elseif channelType == 'manager' then
+        return manager(name, channelValue)
+    elseif channelType == 'storage' then
+        return storage(name, channelValue)
+    elseif channelType == 'worker' then
+        return worker(name, channelValue)
+    end
+end
+
+function synchronizeChannels()
+    importChannelsIfNeeded()
+
+    local content = functionAPI.fromFile('channels.lua')
+    local request = functionAPI.toJson({
+        command = 'synchronizeChannels',
+        body = content
+    })
+
+    logAPI.log('Synchronizing channels')
+    local machines = listChannels()
+    for k, value in pairs(machines) do
+        print('Updating ' .. value.name)
+        functionAPI.sendMessage(request, value.channel)
+    end
+end
+
+function registerChannel(channel)
+    importChannelsIfNeeded()
+    if not findChannel(channel.channel) then
+        createChannel(channel)
+        synchronizeChannels()
+    end
 end

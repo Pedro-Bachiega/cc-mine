@@ -4,8 +4,8 @@ os.loadAPI('uiAPI.lua')
 function writeFarmInfo(infoTable)
     monitor = peripheral.wrap(constants.MONITOR_SIDE)
 
-    function monitor:writeFarmType(info, x, y)
-        x = uiAPI.drawAt(self, 'Farm type: ', x, y, colors.purple)
+    function monitor:writeFarmName(info, x, y)
+        x = uiAPI.drawAt(self, 'Farm name: ', x, y, colors.purple)
         uiAPI.drawAt(self, info, x, y, colors.yellow)
     end
     
@@ -46,7 +46,7 @@ function writeFarmInfo(infoTable)
     monitor.clear()
 
     -- Farm Type - Line 2
-    monitor:writeFarmType(infoTable.farmType, minX, minY)
+    monitor:writeFarmName(infoTable.name, minX, minY)
 
     -- State - Line 3
     monitor:writeFarmState(infoTable.state, minX, 3)

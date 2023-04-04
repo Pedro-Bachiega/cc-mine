@@ -1,0 +1,1 @@
+channelAPI.synchronizeChannels()

@@ -1,7 +1,4 @@
-os.loadAPI('channelAPI.lua')
-os.loadAPI('constants.lua')
 os.loadAPI('functionAPI.lua')
-os.loadAPI('logAPI.lua')
 
 local function update(list)
     local request = functionAPI.toJson({command = 'update'})

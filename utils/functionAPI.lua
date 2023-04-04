@@ -1,4 +1,3 @@
-os.loadAPI('constants.lua')
 os.loadAPI('jsonAPI.lua')
 
 ---------------- Generic ----------------
@@ -96,13 +95,13 @@ end
 
 ---------------- Cache ----------------
 
-local function cacheResponse(fileName, id, content)
+function cacheResponse(fileName, id, content)
     local cachePath = string.format('cache/%s/%s.lua', id, fileName)
     if not fs.exists('cache') then fs.makeDir('cache') end
     toFile(cachePath, content)
 end
 
-local function getFromCache(fileName, id)
+function getFromCache(fileName, id)
     local cachePath = string.format('cache/%s/%s.lua', id, fileName)
     if not fs.exists(cachePath) then return nil end
     return fromJson(fromFile(cachePath))
@@ -142,10 +141,10 @@ end
 
 ---------------- Farm related ----------------
 
-function createFarmInfo(farmType, channel, state, fluidContent, solidContent)
+function createFarmInfo(channel, state, fluidContent, solidContent)
     local info = {
-        farmType = farmType,
-        id = channel,
+        name = channelAPI.findChannel(channel).name,
+        channel = channel,
         state = state
     }
 
@@ -162,17 +161,19 @@ function createFarmInfo(farmType, channel, state, fluidContent, solidContent)
     }
 end
 
-function requestFarmInfo(id)
+function setFarmInfo(farmInfo)
+    local request = {command = 'insert', body = farmInfo}
+    sendMessage(toJson(request), constants.CHANNEL_STORAGE)
+end
+
+function requestFarmInfo(channel)
     local request = {
         command = 'find',
-        body = {
-            id = id
-        }
+        body = {channel = channel}
     }
 
-    print('\nRequesting farm info for id ' .. id .. '...')
+    print('\nRequesting farm info for channel ' .. channel .. '...')
     local response = sendMessageAndWaitResponse(toJson(request), constants.CHANNEL_STORAGE)
-    cacheResponse('farmInfo', id, response.message)
     print('Response: ' .. response.message)
 
     local result = fromJson(response.message)
@@ -180,34 +181,10 @@ function requestFarmInfo(id)
         if result.error then
             print('Error: ' .. result.message)
         else
-            sendMessage(response.message, id)
+            cacheResponse('farmInfo', channel, response.message)
+            print('Caching response', response.message)
+            sendMessage(response.message, channel)
         end
     end
-    return result or createFarmInfo('Placeholder', id, false, nil, nil)
-end
-
-function getFarmInfo(id, skipCache)
-    local info = nil
-    if not skipCache then info = getFromCache('farmInfo', id) end
-    if not info then info = requestFarmInfo(id) end
-    return info
-end
-
-function toggleFarmState(id)
-    local farmInfo = getFarmInfo(id)
-
-    if farmInfo.error then
-        print('Operation cancelled. ' .. farmInfo.message)
-        return nil
-    else
-        farmInfo.state = not farmInfo.state
-        local content = {
-            command = 'insert',
-            body = farmInfo
-        }
-        print(toJson(content))
-        local response = sendMessageAndWaitResponse(toJson(content), constants.CHANNEL_STORAGE)
-        cacheResponse('farmInfo', id, response.message)
-        return response
-    end
+    return result or createFarmInfo(channel, false, nil, nil)
 end

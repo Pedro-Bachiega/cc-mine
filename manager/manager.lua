@@ -1,13 +1,43 @@
 os.loadAPI('buttonAPI.lua')
-os.loadAPI('channelAPI.lua')
-os.loadAPI('constants.lua')
 os.loadAPI('functionAPI.lua')
-os.loadAPI('logAPI.lua')
 os.loadAPI('managerAPI.lua')
 os.loadAPI('uiAPI.lua')
 
-local firstRun = true
 local monitor = peripheral.wrap(constants.MONITOR_SIDE)
+
+local function getCachedFarmInfo(channel)
+    return functionAPI.getFromCache('farmInfo', channel)
+end
+
+local function saveFarmInfo(channel, response)
+    return functionAPI.cacheResponse('farmInfo', channel, response)
+end
+
+local function getFarmInfo(channel, skipCache)
+    local info = nil
+    if not skipCache then info = getCachedFarmInfo(channel) end
+    if not info then info = functionAPI.requestFarmInfo(channel) end
+    return info
+end
+
+local function toggleFarmState(channel)
+    local farmInfo = getFarmInfo(channel)
+
+    if farmInfo.error then
+        print('Operation cancelled. ' .. farmInfo.message)
+        return nil
+    else
+        farmInfo.state = not farmInfo.state
+
+        local content = {command = 'insert', body = farmInfo}
+
+        local request = functionAPI.toJson(content)
+        print(request)
+        local response = functionAPI.sendMessageAndWaitResponse(request, constants.CHANNEL_STORAGE)
+        if not response.error then saveFarmInfo(channel, response.message) end
+        return response
+    end
+end
 
 local function getButtonColor(state)
     return state and colors.green or colors.red
@@ -18,8 +48,14 @@ local function onButtonClick(buttonClicked)
         local args = buttonClicked.args
         if args.state then args.state = not args.state end
 
+        local farmInfo = toggleFarmState(args.channel.channel)
+
+        if not farmInfo then
+            buttonClicked.blink(colors.lightGray)
+            return
+        end
+
         logAPI.log('Toggling state on channel ' .. args.channel.name)
-        local farmInfo = functionAPI.toggleFarmState(args.channel.channel)
         buttonClicked.args.state = farmInfo.state
         buttonClicked.setColor(getButtonColor(farmInfo.state)).draw()
     end
@@ -36,6 +72,7 @@ end
 local function createButtons(monitor, initialX, initialY, finalY, monWidth, monHeight)
     local buttonTable = {}
     local workers = channelAPI.listWorkerChannels()
+    table.sort(workers, function(w1, w2) return w1.channel < w2.channel end)
 
     local x = initialX
     local y = initialY
@@ -44,8 +81,13 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
     local margin = getMargin(finalY - initialY - padding)
 
     for key, value in pairs(workers) do
-        local farmInfo = functionAPI.getFarmInfo(value.channel, firstRun)
-        local newButton = buttonAPI.create(farmInfo.farmType or value.name)
+        if maxWidth < #value.name then maxWidth = #value.name end
+    end
+
+    for key, value in pairs(workers) do
+        local farmInfo = getCachedFarmInfo(value.channel) or {}
+
+        local newButton = buttonAPI.create(value.name)
             .setHorizontalPadding(padding)
             .setVerticalPadding(padding)
             .setAlignment('left')
@@ -55,14 +97,13 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
                 channel = value
             })
 
-        local atBottom = (newButton.y + newButton.getHeight()) > finalY
-        if atBottom then
-            x = x + maxWidth + padding + 1
-            y = initialY
-        end
+        newButton.setSize(maxWidth, newButton.height)
+            .setColor(getButtonColor(newButton.args.state))
 
-        if maxWidth == 0 or newButton.width > maxWidth then
-            maxWidth = newButton.width
+        local atEnd = (newButton.x + newButton.getWidth()) >= monWidth
+        if atEnd then
+            x = initialX
+            y = y + newButton.getHeight() + margin
         end
 
         newButton.onClick(onButtonClick(newButton))
@@ -70,15 +111,9 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
 
         buttonTable[#buttonTable + 1] = newButton
 
-        y = y + newButton.getHeight() + margin
+        x = x + maxWidth + padding + 1
     end
 
-    for i, b in ipairs(buttonTable) do
-        buttonTable[i] = b.setSize(maxWidth, b.height)
-            .setColor(getButtonColor(b.args.state))
-    end
-
-    firstRun = false
     return buttonTable
 end
 

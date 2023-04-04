@@ -6,6 +6,7 @@ os.loadAPI('functionAPI.lua')
 local function synchronizeChannels(content)
     print('\nSynchronizing channels')
     functionAPI.toFile('channels.lua', content)
+    shell.run('reboot')
 end
 
 function update()

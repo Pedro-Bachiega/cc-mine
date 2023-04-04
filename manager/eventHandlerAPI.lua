@@ -1,7 +1,6 @@
 if pocket then return end
 
 os.loadAPI('functionAPI.lua')
-os.loadAPI('logAPI.lua')
 
 local function clearCache()
     logAPI.log('Clearing cache')

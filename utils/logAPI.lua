@@ -1,5 +1,3 @@
-os.loadAPI('channelAPI.lua')
-os.loadAPI('constants.lua')
 os.loadAPI('functionAPI.lua')
 
 ---------------- Logs ----------------

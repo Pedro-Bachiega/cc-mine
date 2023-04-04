@@ -1,5 +1,3 @@
-os.loadAPI('constants.lua')
-
 if fs.exists('cc-mine-atm8') then fs.delete('cc-mine-atm8') end
 if fs.exists('git_clone') and not fs.exists('gitClone.lua') then
     shell.run('mv', 'git_clone', 'gitClone.lua')
