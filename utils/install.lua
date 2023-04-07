@@ -25,7 +25,7 @@ shell.run('run.lua')
 end
 
 local function chooseComputerType()
-    local types = {'worker', 'storage', 'manager', 'log'}
+    local types = {'farm', 'storage', 'manager', 'log'}
     print('\nSelect the computer type:')
 
     for index, value in ipairs(types) do
@@ -68,7 +68,7 @@ end
 local function writeConstants()
     local modemSide = constants.MODEM_SIDE or chooseSideFor('modem', true)
     local monitorSide = constants.MONITOR_SIDE or chooseSideFor('monitor', false)
-    local redstoneSide = constants.REDSTONE_SIDE or (computerType == 'worker' and chooseSideFor('redstone', true) or 'none')
+    local redstoneSide = constants.REDSTONE_SIDE or (computerType == 'farm' and chooseSideFor('redstone', true) or 'none')
 
     local channel = constants.CHANNEL or (computerType == 'storage' and '420' or chooseChannel())
 
@@ -141,6 +141,8 @@ if fs.exists('constants.lua') then
 end
 
 if not computerType then computerType = chooseComputerType() end
+
+if computerType == 'worker' then computerType = 'farm' end
 
 unpack()
 shell.run('reboot')

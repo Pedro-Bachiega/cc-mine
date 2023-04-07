@@ -2,6 +2,10 @@ os.loadAPI('functionAPI.lua')
 os.loadAPI('logAPI.lua')
 
 channelTypes = {
+    farm = {
+        name = 'farm',
+        priority = 1000
+    },
     log = {
         name = 'log',
         priority = 0
@@ -98,8 +102,8 @@ function listStorageChannels()
     return listChannels(channelTypes.storage.name)
 end
 
-function listWorkerChannels()
-    return listChannels(channelTypes.worker.name)
+function listFarmChannels()
+    return listChannels(channelTypes.farm.name)
 end
 
 function log(name, channel)
@@ -114,8 +118,8 @@ function storage(name, channel)
     return buildChannel(name, channelTypes.storage, channel)
 end
 
-function worker(name, channel)
-    return buildChannel(name, channelTypes.worker, channel)
+function farm(name, channel)
+    return buildChannel(name, channelTypes.farm, channel)
 end
 
 function channelFromType(channelType, name, channelValue)
@@ -125,8 +129,8 @@ function channelFromType(channelType, name, channelValue)
         return manager(name, channelValue)
     elseif channelType == 'storage' then
         return storage(name, channelValue)
-    elseif channelType == 'worker' then
-        return worker(name, channelValue)
+    elseif channelType == 'farm' then
+        return farm(name, channelValue)
     end
 end
 

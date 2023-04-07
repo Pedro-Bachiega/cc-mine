@@ -71,8 +71,8 @@ end
 
 local function createButtons(monitor, initialX, initialY, finalY, monWidth, monHeight)
     local buttonTable = {}
-    local workers = channelAPI.listWorkerChannels()
-    table.sort(workers, function(w1, w2) return w1.channel < w2.channel end)
+    local farms = channelAPI.listFarmChannels()
+    table.sort(farms, function(w1, w2) return w1.channel < w2.channel end)
 
     local x = initialX
     local y = initialY
@@ -80,11 +80,11 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
     local maxWidth = 0
     local margin = getMargin(finalY - initialY - padding)
 
-    for key, value in pairs(workers) do
+    for key, value in pairs(farms) do
         if maxWidth < #value.name then maxWidth = #value.name end
     end
 
-    for key, value in pairs(workers) do
+    for key, value in pairs(farms) do
         local farmInfo = getCachedFarmInfo(value.channel) or {}
 
         local newButton = buttonAPI.create(value.name)
