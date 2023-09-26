@@ -1,1 +1,0 @@
-displayAPI.draw(getLogs())

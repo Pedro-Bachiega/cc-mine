@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "types": [
+      "reflect-metadata",
+      "jest",
+      "ts-mockito"
+    ],
+  },
+  "include": [
+    ".eslintrc.js"
+  ]
+}
