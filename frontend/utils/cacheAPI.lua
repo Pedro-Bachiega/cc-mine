@@ -4,20 +4,14 @@ local jsonAPI = require('jsonAPI')
 
 local cacheAPI = {}
 
-local function createCacheFile(content, encode, secondsToInvalidate)
-    local defaultSecondsToInvalidate = 24 * 60 * 60
-    local currentSecondsToInvalidate = secondsToInvalidate or defaultSecondsToInvalidate
-    local currentTimestamp = dateAPI.getTimestampTable()
-    local cachedAt = dateAPI.getDateTime(false, currentTimestamp)
-    local invalidateAt = dateAPI.getDateTime(
-        false,
-        dateAPI.addSeconds(currentTimestamp, currentSecondsToInvalidate)
-    )
+local function createCacheFile(content, secondsToInvalidate)
+    if not secondsToInvalidate then
+        secondsToInvalidate = 24 * 60 * 60
+    end
 
     local result = {
-        content = encode and jsonAPI.toJson(content) or content,
-        cachedAt = cachedAt,
-        invalidateAt = invalidateAt
+        content = content,
+        invalidateAt = secondsToInvalidate == 0 and 0 or dateAPI.getTimeEpoch() + secondsToInvalidate
     }
     return jsonAPI.toJson(result)
 end
@@ -30,21 +24,26 @@ function cacheAPI.deleteFromCache(path)
     fileAPI.deleteFile('cache/' .. path)
 end
 
-function cacheAPI.saveToCache(path, content, encode, secondsToInvalidate, force)
-    if not fs.exists('cache') then fs.makeDir('cache') end
-
-    local jsonString = createCacheFile(content, encode, secondsToInvalidate)
-    return fileAPI.saveToFile('cache/' .. path, jsonString, force)
-end
-
-function cacheAPI.fromCache(path, decode, deleteAfter)
+function cacheAPI.fromCache(path, deleteAfter)
     local cachePath = 'cache/' .. path
-    if not fs.exists(cachePath) then return nil end
+    local file = jsonAPI.fromJsonFile(cachePath)
+    if not file then return nil end
 
-    local result = decode and jsonAPI.fromJsonFile(cachePath) or fileAPI.fromFile(cachePath)
+    if file.invalidateAt > 0 and dateAPI.getTimeEpoch() > file.invalidateAt then
+        cacheAPI.deleteFromCache(path)
+        return nil
+    end
+
     if deleteAfter then cacheAPI.deleteFromCache(cachePath) end
 
-    return result
+    return file.content
+end
+
+function cacheAPI.saveToCache(path, content, secondsToInvalidate, force)
+    if not fs.exists('cache') then fs.makeDir('cache') end
+
+    local jsonString = createCacheFile(content, secondsToInvalidate)
+    return fileAPI.saveToFile('cache/' .. path, jsonString, force)
 end
 
 return cacheAPI

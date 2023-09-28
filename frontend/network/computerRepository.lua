@@ -6,6 +6,8 @@ local computerRepository = {}
 
 -- Deletes computer on cache and system
 function computerRepository.deleteComputer(id)
+    print('---------------------')
+
     local statusCode, _ = httpAPI.delete('/computer/' .. id)
     if statusCode == 200 then
         local cachePath = 'computer/information-' .. id .. '.json'
@@ -17,30 +19,37 @@ function computerRepository.deleteComputer(id)
         print('Error searching for computer')
     end
 
+    print('---------------------')
+
     return false
 end
 
 -- Searches for computer on cache or system (only on system if 'force' == true)
 function computerRepository.findComputer(id, force)
-    local cachePath = 'computer/information-' .. id .. '.json'
-    if fs.exists(cachePath) then
-        if force then
-            cacheAPI.deleteFromCache(cachePath)
-        else
-            return cacheAPI.fromCache(cachePath)
-        end
+    ---@diagnostic disable-next-line: undefined-field
+    local computerId = id or os.getComputerID()
+    local cachePath = 'computer/information-' .. computerId .. '.json'
+    local cachedComputer = cacheAPI.fromCache(cachePath)
+
+    if force then
+        cacheAPI.deleteFromCache(cachePath)
+    elseif cachedComputer then
+        return cachedComputer
     end
 
-    local statusCode, response = httpAPI.get('/computer/' .. id)
+    print('---------------------')
+
+    local statusCode, response = httpAPI.get('/computer/' .. computerId)
     if statusCode == 200 and response then
-        print('Computer found')
-        cacheAPI.saveToCache(cachePath, response, true, true)
+        cacheAPI.saveToCache(cachePath, response, nil, true)
         return response
     elseif statusCode == 404 then
         print('Computer not registered')
     else
         print('Error searching for computer')
     end
+
+    print('---------------------')
 
     return nil
 end
@@ -49,12 +58,12 @@ end
 -- Can be filtered by computerType by passing an array of 'computerAPI.computerTypes'
 function computerRepository.listComputers(computerTypes, force)
     local cachePath = 'computer/list-' .. (computerTypes or 'all') .. '.json'
-    if fs.exists(cachePath) then
-        if force then
-            cacheAPI.deleteFromCache(cachePath)
-        else
-            return cacheAPI.fromCache(cachePath)
-        end
+    local cachedList = cacheAPI.fromCache(cachePath)
+
+    if force then
+        cacheAPI.deleteFromCache(cachePath)
+    elseif cachedList then
+        return cachedList
     end
 
     local url = '/computer/list'
@@ -69,10 +78,11 @@ function computerRepository.listComputers(computerTypes, force)
         url = url .. typesQueryParam
     end
 
+    print('---------------------')
+
     local statusCode, response = httpAPI.get(url)
     if statusCode == 200 and response then
-        print('Computer found')
-        cacheAPI.saveToCache(cachePath, response, true, true)
+        cacheAPI.saveToCache(cachePath, response, nil, true)
         return response
     elseif statusCode == 404 then
         print('Computer not registered')
@@ -80,31 +90,39 @@ function computerRepository.listComputers(computerTypes, force)
         print('Error searching for computer')
     end
 
+    print('---------------------')
+
     return nil
 end
 
 -- Registers computer on system
 function computerRepository.registerComputer(computer)
+    print('---------------------')
+
     local statusCode, response = httpAPI.post('/computer/register', computer)
     if statusCode == 200 then
-        print('Computer registered')
         return response
     else
         print('Error registering computer')
     end
+
+    print('---------------------')
 
     return nil
 end
 
 -- Updates computer on system
 function computerRepository.updateComputer(computer)
+    print('---------------------')
+
     local statusCode, response = httpAPI.post('/computer/update', computer)
     if statusCode == 200 then
-        print('Computer updated')
         return response
     else
         print('Error updating computer')
     end
+
+    print('---------------------')
 
     return nil
 end

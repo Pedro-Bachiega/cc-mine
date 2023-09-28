@@ -1,10 +1,11 @@
 local functionAPI = require('functionAPI')
+local peripheralAPI = require('peripheralAPI')
 local uiAPI = require('uiAPI')
 
 local displayAPI = {}
 
 function displayAPI.writeFarmInfo(computerInfo)
-    local monitor = peripheral.wrap(computerInfo.monitorSide)
+    local monitor = peripheralAPI.requirePeripheral('monitor')
 
     function monitor:writeFarmName(info, x, y)
         x = uiAPI.drawAt(self, 'Farm name: ', x, y, colors.purple)

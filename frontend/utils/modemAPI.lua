@@ -1,27 +1,36 @@
 local cacheAPI = require('cacheAPI')
+local eventAPI = require('eventAPI')
 local functionAPI = require('functionAPI')
 local jsonAPI = require('jsonAPI')
-local eventAPI = require('eventAPI')
+local peripheralAPI = require('peripheralAPI')
 
 local defaultMaxRetries = 30
 
 local modemAPI = {}
 
-local function findComputer(force)
-    local computerAPI = require('computerAPI')
-    return computerAPI.findComputer(force)
-end
-
 local function findNetworkComputer()
+    local cachePath = 'computer/networking-computer.json'
+    local networkingComputer = cacheAPI.fromCache(cachePath)
+
+    if networkingComputer then return networkingComputer.id end
+
+    local networkingComputerId = nil
+    while not networkingComputerId do
+        print('Networking computer ID:')
+        local content = read()
+        if content and content ~= '' then networkingComputerId = tonumber(content) end
+    end
+
     local computerAPI = require('computerAPI')
-    local computerList = computerAPI.listComputers({ computerAPI.computerTypes.NETWORK })
-    local networkingComputer = computerList and computerList[0] or nil
-    return networkingComputer
+    networkingComputer = computerAPI.fetchNetworkingComputer(networkingComputerId)
+    cacheAPI.saveToCache(cachePath, networkingComputer, 0, true)
+
+    return networkingComputer.id
 end
 
-local function openModem(computerInfo)
-    local modem = peripheral.wrap(computerInfo.modemSide)
-    modem.open(computerInfo.id)
+local function openModem()
+    local modem = peripheralAPI.requirePeripheral('modem')
+    modem.open(os.getComputerID())
     return modem
 end
 
@@ -29,18 +38,24 @@ function modemAPI.waitForMessage(timeout)
     local cachePath = 'modem/messageResult.lua'
 
     local function execute()
-        openModem(findComputer())
+        openModem()
         local eventTable = eventAPI.waitForEvent('modem_message')
 
         local result = {
             event = eventTable.event,
-            message = eventTable.param1 and jsonAPI.fromJson(eventTable.param1) or nil,
-            modemSide = eventTable.param2,
+            side = eventTable.param1,
+            senderChannel = eventTable.param2,
             replyChannel = eventTable.param3,
-            senderChannel = eventTable.param4,
+            message = eventTable.param4,
             senderDistance = eventTable.param5
         }
-        cacheAPI.saveToCache(cachePath, result, true, true)
+
+        if result.message then
+            result.message = jsonAPI.fromJson(result.message)
+        end
+        print('Received: ' .. jsonAPI.toJson(result))
+
+        cacheAPI.saveToCache(cachePath, result, 1, true)
     end
 
     if timeout then
@@ -49,45 +64,39 @@ function modemAPI.waitForMessage(timeout)
         execute()
     end
 
-    return cacheAPI.fromCache(cachePath, true, true)
+    return cacheAPI.fromCache(cachePath, true)
 end
 
 function modemAPI.sendMessage(content, destinationChannel, replyChannel)
-    local computerInfo = findComputer()
-    if not computerInfo then
-        print('Computer not registered in the network')
-        return
-    end
-
-    if not replyChannel then replyChannel = computerInfo.id end
-    openModem(computerInfo).transmit(destinationChannel, replyChannel, jsonAPI.toJson(content))
+    if not replyChannel then replyChannel = os.getComputerID() end
+    openModem().transmit(destinationChannel, replyChannel, jsonAPI.toJson(content))
 end
 
 function modemAPI.sendMessageAndWaitResponse(content, destinationChannel, replyChannel, timeout, maxRetries)
     local function execute()
         modemAPI.sendMessage(content, destinationChannel, replyChannel)
-        modemAPI.waitForMessage(timeout)
+        return modemAPI.waitForMessage(timeout)
     end
 
     return functionAPI.runWithRetries(maxRetries or defaultMaxRetries, execute)
 end
 
-function modemAPI.broadcastMessage(content, replyChannel)
-    local computerList = findNetworkComputer()
-    local networkingComputer = computerList and computerList[0] or nil
-
-    if not networkingComputer then
-        print('No networking computer registered')
-        return
+function modemAPI.broadcastMessage(content, replyChannel, networkingComputerId)
+    if not networkingComputerId then
+        networkingComputerId = findNetworkComputer()
+        if not networkingComputerId then
+            print('No networking computer registered')
+            return
+        end
     end
 
-    modemAPI.sendMessage(content, networkingComputer.id, replyChannel)
+    modemAPI.sendMessage(content, networkingComputerId, replyChannel)
 end
 
-function modemAPI.broadcastMessageAndWaitResponse(content, replyChannel, timeout, maxRetries)
+function modemAPI.broadcastMessageAndWaitResponse(content, replyChannel, timeout, maxRetries, networkingComputerId)
     local function execute()
-        modemAPI.broadcastMessage(content, replyChannel)
-        modemAPI.waitForMessage(timeout)
+        modemAPI.broadcastMessage(content, replyChannel, networkingComputerId)
+        return modemAPI.waitForMessage(timeout)
     end
 
     return functionAPI.runWithRetries(maxRetries or defaultMaxRetries, execute)

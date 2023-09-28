@@ -1,5 +1,6 @@
 local computerAPI = require('computerAPI')
 local functionAPI = require('functionAPI')
+local peripheralAPI = require('peripheralAPI')
 
 -- Where all buttons are born
 local buttonAPI = {}
@@ -150,9 +151,7 @@ function buttonAPI.create(text)
 		local paddedWidth = this.getWidth()
 		local paddedHeight = this.getHeight()
 
-		local monitor = peripheral.wrap(computer.monitorSide)
-
-		if monitor == nil then error("Monitor not set!") end
+		local monitor = peripheralAPI.requirePeripheral('monitor')
 
 		local xpos = this.x + (paddedWidth / 2) - (#this.text / 2)
 		local t = this.text
@@ -227,6 +226,7 @@ function buttonAPI.await(...)
 
 	for i in pairs(array) do array[i].draw() end
 
+	---@diagnostic disable-next-line: undefined-field
 	local _, _, x, y = os.pullEvent("monitor_touch")
 
 	for i in pairs(array) do

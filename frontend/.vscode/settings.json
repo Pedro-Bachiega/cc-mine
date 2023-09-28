@@ -12,5 +12,8 @@
         "http",
         "multishell",
         "textutils"
+    ],
+    "Lua.diagnostics.disable": [
+        "undefined-field"
     ]
 }

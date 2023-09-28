@@ -102,9 +102,29 @@ end
 
 ---------------- Decoding ----------------
 
+local decoder = {}
+
 local decodeControls = {}
 for k, v in pairs(controls) do
 	decodeControls[v] = k
+end
+
+local numChars = { ['e'] = true, ['E'] = true, ['+'] = true, ['-'] = true, ['.'] = true }
+
+local function parseArray(str)
+	str = removeWhite(str:sub(2))
+
+	local val = {}
+	local i = 1
+	while str:sub(1, 1) ~= "]" do
+		local v = nil
+		v, str = decoder.parseValue(str)
+		val[i] = v
+		i = i + 1
+		str = removeWhite(str)
+	end
+	str = removeWhite(str:sub(2))
+	return val, str
 end
 
 local function parseBoolean(str)
@@ -115,11 +135,14 @@ local function parseBoolean(str)
 	end
 end
 
-local function parseNull(str)
-	return nil, removeWhite(str:sub(5))
+local function parseMember(str)
+	local k = nil
+	k, str = decoder.parseValue(str)
+	local val = nil
+	val, str = decoder.parseValue(str)
+	return k, val, str
 end
 
-local numChars = { ['e'] = true, ['E'] = true, ['+'] = true, ['-'] = true, ['.'] = true }
 local function parseNumber(str)
 	local i = 1
 	while numChars[str:sub(i, i)] or tonumber(str:sub(i, i)) do
@@ -127,6 +150,24 @@ local function parseNumber(str)
 	end
 	local val = tonumber(str:sub(1, i - 1))
 	str = removeWhite(str:sub(i))
+	return val, str
+end
+
+local function parseNull(str)
+	return nil, removeWhite(str:sub(5))
+end
+
+local function parseObject(str)
+	str = removeWhite(str:sub(2))
+
+	local val = {}
+	while str:sub(1, 1) ~= "}" do
+		local k, v = nil, nil
+		k, v, str = decoder.parseMember(str)
+		val[k] = v
+		str = removeWhite(str)
+	end
+	str = removeWhite(str:sub(2))
 	return val, str
 end
 
@@ -150,72 +191,44 @@ local function parseString(str)
 	return s, removeWhite(str:sub(2))
 end
 
-local function parseArray(str)
-	str = removeWhite(str:sub(2))
-
-	local val = {}
-	local i = 1
-	while str:sub(1, 1) ~= "]" do
-		local v = nil
-		---@diagnostic disable-next-line: undefined-global
-		v, str = parseValue(str)
-		val[i] = v
-		i = i + 1
-		str = removeWhite(str)
-	end
-	str = removeWhite(str:sub(2))
-	return val, str
-end
-
-local function parseMember(str)
-	local k = nil
-	---@diagnostic disable-next-line: undefined-global
-	k, str = parseValue(str)
-	local val = nil
-	---@diagnostic disable-next-line: undefined-global
-	val, str = parseValue(str)
-	return k, val, str
-end
-
-local function parseObject(str)
-	str = removeWhite(str:sub(2))
-
-	local val = {}
-	while str:sub(1, 1) ~= "}" do
-		local k, v = nil, nil
-		k, v, str = parseMember(str)
-		val[k] = v
-		str = removeWhite(str)
-	end
-	str = removeWhite(str:sub(2))
-	return val, str
-end
-
 local function parseValue(str)
 	local fchar = str:sub(1, 1)
 	if fchar == "{" then
-		return parseObject(str)
+		return decoder.parseObject(str)
 	elseif fchar == "[" then
-		return parseArray(str)
+		return decoder.parseArray(str)
 	elseif tonumber(fchar) ~= nil or numChars[fchar] then
-		return parseNumber(str)
+		return decoder.parseNumber(str)
 	elseif str:sub(1, 4) == "true" or str:sub(1, 5) == "false" then
-		return parseBoolean(str)
+		return decoder.parseBoolean(str)
 	elseif fchar == "\"" then
-		return parseString(str)
+		return decoder.parseString(str)
 	elseif str:sub(1, 4) == "null" then
-		return parseNull(str)
+		return decoder.parseNull(str)
 	end
 	return nil
 end
 
+decoder = {
+	parseArray = parseArray,
+	parseBoolean = parseBoolean,
+	parseMember = parseMember,
+	parseNull = parseNull,
+	parseNumber = parseNumber,
+	parseObject = parseObject,
+	parseString = parseString,
+	parseValue = parseValue
+}
+
 local function decode(str)
 	str = removeWhite(str)
-	return parseValue(str)
+	return decoder.parseValue(str)
 end
 
 local function decodeFromFile(path)
-	local file = assert(fs.open(path, "r"))
+	local file = fs.open(path, "r")
+	if not file then return nil end
+
 	local decoded = decode(file.readAll())
 	file.close()
 	return decoded

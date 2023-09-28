@@ -49,9 +49,39 @@ function dateAPI.addDays(timestampTable, days)
     return timestampTable
 end
 
+function dateAPI.dateIsNewerThan(newDate, oldDate)
+    newDate = dateAPI.dateToTable(newDate)
+    oldDate = dateAPI.dateToTable(oldDate)
+
+    local isNewer = newDate.year > oldDate.year
+    isNewer = isNewer or newDate.month > oldDate.month
+    isNewer = isNewer or newDate.day > oldDate.day
+    isNewer = isNewer or newDate.hour > oldDate.hour
+    isNewer = isNewer or newDate.min > oldDate.min
+    isNewer = isNewer or newDate.sec > oldDate.sec
+
+    return isNewer
+end
+
+function dateAPI.dateToTable(date)
+    local processedDate = date:gsub(
+        "(.+)-(.+)-(.+)'T'(.+):(.+):(.+)",
+        'year=%1, month=%2, day=%3, hour=%4, min=%5, sec=%6'
+    )
+
+    local table = {}
+    for key, value in processedDate:gmatch("(%w+)=(%w+)") do
+        table[key] = value
+    end
+    return table
+end
+
+function dateAPI.getTimeEpoch()
+    return os.epoch("local") / 1000
+end
+
 function dateAPI.getTimestampTable()
-    ---@diagnostic disable-next-line: undefined-global
-    return os.date("*t", timestamp) or os.date("%format", timestamp)
+    return os.date("*t", dateAPI.getTimeEpoch())
 end
 
 function dateAPI.getDateTime(pretty, fromTimestamp)
@@ -67,12 +97,13 @@ function dateAPI.getDateTime(pretty, fromTimestamp)
         )
     else
         return string.format(
-            '%d-%d-%d\'T\'%02d:%02d:%02d',
+            "%d-%d-%d'T'%02d:%02d:%02d",
             table.year,
             table.month,
             table.day,
             table.hour,
-            table.min
+            table.min,
+            table.sec
         )
     end
 end

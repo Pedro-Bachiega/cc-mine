@@ -1,4 +1,4 @@
-local functionAPI = require('functionAPI')
+local dateAPI = require('dateAPI')
 
 local uiAPI = {}
 
@@ -33,7 +33,7 @@ function uiAPI.drawFooter(monitor, text)
 end
 
 function uiAPI.drawTimestampFooter(monitor)
-    return uiAPI.drawFooter(monitor, 'Updated at: ' .. functionAPI.getDateTime(true))
+    return uiAPI.drawFooter(monitor, 'Updated at: ' .. dateAPI.getDateTime(true))
 end
 
 return uiAPI

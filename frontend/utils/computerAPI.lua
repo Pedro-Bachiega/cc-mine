@@ -1,4 +1,5 @@
 local computerRepository = require('computerRepository')
+local cacheAPI = require('cacheAPI')
 
 local computerAPI = {
     computerTypes = {
@@ -37,7 +38,15 @@ function computerAPI.deleteComputer()
 end
 
 function computerAPI.findComputer(force)
-    return computerRepository.findComputer(force)
+    return computerRepository.findComputer(nil, force)
+end
+
+function computerAPI.findComputerType()
+    return cacheAPI.fromCache('computer/computerType.json')
+end
+
+function computerAPI.fetchNetworkingComputer(networkingComputerId)
+    return computerRepository.fetchNetworkingComputer(networkingComputerId)
 end
 
 function computerAPI.listComputers(computerType, force)
@@ -45,6 +54,7 @@ function computerAPI.listComputers(computerType, force)
 end
 
 function computerAPI.registerComputer(computer)
+    cacheAPI.saveToCache('computer/computerType.json', computer.computerType, 0)
     return computerRepository.registerComputer(computer)
 end
 

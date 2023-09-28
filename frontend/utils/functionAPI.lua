@@ -9,6 +9,18 @@ function functionAPI.arrayContains(array, element)
     return false
 end
 
+function functionAPI.tableToKeyArray(table)
+    local array = {}
+    for key, _ in pairs(table) do array[#array+1] = key end
+    return array
+end
+
+function functionAPI.tableToValueArray(table)
+    local array = {}
+    for _, value in pairs(table) do array[#array+1] = value end
+    return array
+end
+
 function functionAPI.isTable(element)
     return type(element) == "table"
 end
@@ -36,6 +48,11 @@ end
 function functionAPI.runWithTimeout(timeoutSeconds, executionBlock)
     local function waitTimeout() sleep(timeoutSeconds) end
     parallel.waitForAny(waitTimeout, executionBlock)
+end
+
+function functionAPI.unrequire(module)
+    package.loaded[module] = nil
+    _G[module] = nil
 end
 
 return functionAPI

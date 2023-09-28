@@ -1,7 +1,7 @@
 local fileAPI = require('fileAPI')
 local jsonAPI = require('jsonAPI')
 
-local timeoutSeconds = 15
+local defaultTimeoutSeconds = 15
 local maxRetriesDefault = 5
 
 local baseApiUrl = 'https://southamerica-east1-mine-cc-dev.cloudfunctions.net'
@@ -9,22 +9,30 @@ local baseApiUrl = 'https://southamerica-east1-mine-cc-dev.cloudfunctions.net'
 ---------------- Processing ----------------
 
 -- Executes a request with set timeout and retry count
-local function performRequest(method, url, request, timeout, maxRetries)
+local function performRequest(method, url, body, timeout, maxRetries)
     local response, statusCode
     local requestUrl = baseApiUrl .. url
+    local serializedBody = body and jsonAPI.toJson(body) or nil
 
     print('[HTTP] - Synchronous\nMethod: ' .. method .. '\nUrl: ' .. requestUrl)
+    if body then print('Body:\n' .. serializedBody) end
 
     local retryCount = 0
     while (retryCount < (maxRetries or maxRetriesDefault)) do
         local httpConfig = {
             url = requestUrl,
             method = method,
-            body = request and jsonAPI.toJson(request) or nil,
-            timeout = timeout or timeoutSeconds
+            headers = { ['Content-Type'] = 'application/json' },
+            timeout = timeout or defaultTimeoutSeconds
         }
-        local connection = http.post(httpConfig)
 
+        local connection = nil
+        if ('PATCH,POST,PUT'):find(method) then
+            httpConfig.body = serializedBody
+            connection = http.post(httpConfig)
+        else
+            connection = http.get(httpConfig)
+        end
         response = connection.readAll()
         statusCode = connection.getResponseCode()
         connection.close()
@@ -32,6 +40,9 @@ local function performRequest(method, url, request, timeout, maxRetries)
         print('[HTTP]\nResponse code: ' .. statusCode .. '\nBody:\n' .. jsonAPI.prettifyJson(response))
 
         if statusCode >= 200 and statusCode < 300 then break end
+
+        print('Retrying in 5 seconds')
+        sleep(5)
     end
 
     if response then return statusCode, jsonAPI.fromJson(response) end

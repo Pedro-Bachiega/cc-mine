@@ -8,8 +8,4 @@ computerAPI.findComputer(true)
 fileAPI.deleteFile('cc-mine')
 
 -- Update
-shell.run('gitClone', 'https://github.com/Pedro-Bachiega/cc-mine.git')
-fileAPI.moveDir('cc-mine/frontend', 'cc-mine', true, true)
-fileAPI.deleteFile('cc-mine/backend')
-fileAPI.deleteFile('cc-mine/frontend')
-shell.run('cc-mine/utils/install.lua')
+shell.run('pastebin', 'run', 'sEGM5iaW')

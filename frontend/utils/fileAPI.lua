@@ -9,8 +9,21 @@ function fileAPI.appendToFile(fileName, content)
     file.close()
 end
 
+function fileAPI.copyFiles(path, force)
+    local files = fs.list(path)
+    for _, fileName in ipairs(files) do
+        if force or not fs.exists(fileName) then
+            fs.copy(path .. fileName, fileName)
+        end
+    end
+end
+
 function fileAPI.deleteFile(fileName)
     if fs.exists(fileName) then fs.delete(fileName) end
+end
+
+function fileAPI.deleteFiles(list)
+    for _, fileName in ipairs(list) do fileAPI.deleteFile(fileName) end
 end
 
 function fileAPI.fromFile(fileName)
@@ -20,20 +33,6 @@ function fileAPI.fromFile(fileName)
     local content = file.readAll()
     file.close()
     return content
-end
-
-function fileAPI.saveToFile(fileName, content, force)
-    if force then
-        fileAPI.deleteFile(fileName)
-    elseif not force and fs.exists(fileName) then
-        return false
-    end
-
-    local file = fs.open(fileName, 'w')
-    file.write(content)
-    file.close()
-
-    return true
 end
 
 function fileAPI.moveFile(fullPath, newPath, force)
@@ -55,6 +54,20 @@ function fileAPI.moveDir(fullPath, newPath, clearIfExists, force)
     for _, fileName in ipairs(files) do
         fileAPI.moveFile(fullPath .. '/' .. fileName, newPath .. '/' .. fileName, force)
     end
+end
+
+function fileAPI.saveToFile(fileName, content, force)
+    if force then
+        fileAPI.deleteFile(fileName)
+    elseif not force and fs.exists(fileName) then
+        return false
+    end
+
+    local file = fs.open(fileName, 'w')
+    file.write(content)
+    file.close()
+
+    return true
 end
 
 return fileAPI

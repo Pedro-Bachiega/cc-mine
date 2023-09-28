@@ -2,6 +2,7 @@ local buttonAPI = require('buttonAPI')
 local computerAPI = require('computerAPI')
 local functionAPI = require('functionAPI')
 local mathAPI = require('mathAPI')
+local peripheralAPI = require('peripheralAPI')
 local uiAPI = require('uiAPI')
 
 local function getButtonColor(state)
@@ -42,7 +43,7 @@ end
 
 local function createButtons(initialX, initialY, finalY, monWidth)
     local buttonTable = {}
-    local farms = computerAPI.listComputers({ computerAPI.computerTypes.FARM })
+    local farms = computerAPI.listComputers({ computerAPI.computerTypes.FARM }, true)
     if not farms or not functionAPI.isTable(farms) then
         error('No farms listed, check logs')
     end
@@ -86,8 +87,7 @@ local function createButtons(initialX, initialY, finalY, monWidth)
     return buttonTable
 end
 
-local computerInfo = computerAPI.findComputer() or error('Computer not registered')
-local monitor = peripheral.wrap(computerInfo.monitorSide)
+local monitor = peripheralAPI.requirePeripheral('monitor')
 
 while true do
     monitor.clear()

@@ -1,4 +1,4 @@
 local modemAPI = require('modemAPI')
 
-modemAPI.broadcastMessage({method = 'GET', url = '/computer/update'})
+modemAPI.broadcastMessage({url = '/systems/update'})
 shell.run('update.lua')

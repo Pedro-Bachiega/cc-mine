@@ -9,7 +9,7 @@ local function handleUpdate()
         return
     end
 
-    if computer.monitorSide ~= 'none' then displayAPI.writeFarmInfo(computer) end
+    displayAPI.writeFarmInfo(computer)
 
     redstone.setOutput(computer.redstoneSide, computer.data.state or false)
 end
