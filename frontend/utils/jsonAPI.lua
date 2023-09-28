@@ -1,6 +1,7 @@
 ---------------- Utils ----------------
 
-local controls = {["\n"]="\\n", ["\r"]="\\r", ["\t"]="\\t", ["\b"]="\\b", ["\f"]="\\f", ["\""]="\\\"", ["\\"]="\\\\"}
+local controls = { ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t", ["\b"] = "\\b", ["\f"] = "\\f", ["\""] = "\\\"",
+	["\\"] = "\\\\" }
 
 local function isArray(t)
 	local max = 0
@@ -14,7 +15,7 @@ local function isArray(t)
 	return max == #t
 end
 
-local whites = {['\n']=true; ['\r']=true; ['\t']=true; [' ']=true; [',']=true; [':']=true}
+local whites = { ['\n'] = true, ['\r'] = true, ['\t'] = true, [' '] = true, [','] = true, [':'] = true }
 local function removeWhite(str)
 	while whites[str:sub(1, 1)] do
 		str = str:sub(2)
@@ -39,9 +40,9 @@ local function encodeCommon(val, pretty, tabLevel, tTracking)
 			str = str .. "\n"
 			tabLevel = tabLevel + 1
 		end
-		for k,v in iterator(val) do
+		for k, v in iterator(val) do
 			tab("")
-			loopFunc(k,v)
+			loopFunc(k, v)
 			str = str .. ","
 			if pretty then str = str .. "\n" end
 		end
@@ -61,20 +62,20 @@ local function encodeCommon(val, pretty, tabLevel, tTracking)
 		assert(not tTracking[val], "Cannot encode a table holding itself recursively")
 		tTracking[val] = true
 		if isArray(val) then
-			arrEncoding(val, "[", "]", ipairs, function(k,v)
+			arrEncoding(val, "[", "]", ipairs, function(k, v)
 				str = str .. encodeCommon(v, pretty, tabLevel, tTracking)
 			end)
 		else
-			arrEncoding(val, "{", "}", pairs, function(k,v)
+			arrEncoding(val, "{", "}", pairs, function(k, v)
 				assert(type(k) == "string", "JSON object keys must be strings", 2)
 				str = str .. encodeCommon(k, pretty, tabLevel, tTracking)
 				str = str .. (pretty and ": " or ":") .. encodeCommon(v, pretty, tabLevel, tTracking)
 			end)
 		end
-	-- String encoding
+		-- String encoding
 	elseif type(val) == "string" then
-		str = '"' .. val:gsub("[%c\"\\]", controls) .. '"'
-	-- Number encoding
+		str = '"' .. string.gsub(val, "[%c\"\\]", controls) .. '"'
+		-- Number encoding
 	elseif type(val) == "number" or type(val) == "boolean" then
 		str = tostring(val)
 	else
@@ -94,7 +95,7 @@ end
 ---------------- Decoding ----------------
 
 local decodeControls = {}
-for k,v in pairs(controls) do
+for k, v in pairs(controls) do
 	decodeControls[v] = k
 end
 
@@ -110,7 +111,7 @@ local function parseNull(str)
 	return nil, removeWhite(str:sub(5))
 end
 
-local numChars = {['e']=true; ['E']=true; ['+']=true; ['-']=true; ['.']=true}
+local numChars = { ['e'] = true, ['E'] = true, ['+'] = true, ['-'] = true, ['.'] = true }
 local function parseNumber(str)
 	local i = 1
 	while numChars[str:sub(i, i)] or tonumber(str:sub(i, i)) do
@@ -124,16 +125,16 @@ end
 local function parseString(str)
 	str = str:sub(2)
 	local s = ""
-	while str:sub(1,1) ~= "\"" do
-		local next = str:sub(1,1)
+	while str:sub(1, 1) ~= "\"" do
+		local next = str:sub(1, 1)
 		str = str:sub(2)
 		assert(next ~= "\n", "Unclosed string")
 
 		if next == "\\" then
-			local escape = str:sub(1,1)
+			local escape = str:sub(1, 1)
 			str = str:sub(2)
 
-			next = assert(decodeControls[next..escape], "Invalid escape character")
+			next = assert(decodeControls[next .. escape], "Invalid escape character")
 		end
 
 		s = s .. next
@@ -148,6 +149,7 @@ local function parseArray(str)
 	local i = 1
 	while str:sub(1, 1) ~= "]" do
 		local v = nil
+		---@diagnostic disable-next-line: undefined-global
 		v, str = parseValue(str)
 		val[i] = v
 		i = i + 1
@@ -159,8 +161,10 @@ end
 
 local function parseMember(str)
 	local k = nil
+	---@diagnostic disable-next-line: undefined-global
 	k, str = parseValue(str)
 	local val = nil
+	---@diagnostic disable-next-line: undefined-global
 	val, str = parseValue(str)
 	return k, val, str
 end
@@ -214,20 +218,20 @@ end
 local jsonAPI = {}
 
 function jsonAPI.fromJson(jsonString)
-    return decode(jsonString)
+	return decode(jsonString)
 end
 
 function jsonAPI.fromJsonFile(path)
-    return decodeFromFile(path)
+	return decodeFromFile(path)
 end
 
 function jsonAPI.toJson(content, pretty)
 	if not content then return '' end
-    return pretty and encodePretty(content) or encode(content)
+	return pretty and encodePretty(content) or encode(content)
 end
 
 function jsonAPI.prettifyJson(jsonString)
-    return jsonAPI.toJson(jsonAPI.fromJson(jsonString), true)
+	return jsonAPI.toJson(jsonAPI.fromJson(jsonString), true)
 end
 
 return jsonAPI

@@ -40,7 +40,7 @@ end
 local function handleSystemsUpdate()
     local computers = computerAPI.listComputers()
     for _, computer in computers do
-        if computer.id ~= os.getComputerId() then
+        if computer.id ~= os.getComputerID() then
             local message = repositoryAPI.buildRequest('/systems/update')
             modemAPI.sendMessage(message, computer.id)
             print('Updating computer: ' .. computer.id)

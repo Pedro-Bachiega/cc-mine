@@ -1,4 +1,4 @@
-sleep(os.getComputerId() * 2)
+sleep(os.getComputerID() * 2)
 
 local computerAPI = require('computerAPI')
 

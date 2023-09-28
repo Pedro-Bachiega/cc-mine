@@ -1,5 +1,4 @@
 local cacheAPI = require('cacheAPI')
-local computerAPI = require('computerAPI')
 local functionAPI = require('functionAPI')
 local jsonAPI = require('jsonAPI')
 local eventAPI = require('eventAPI')
@@ -7,6 +6,18 @@ local eventAPI = require('eventAPI')
 local defaultMaxRetries = 30
 
 local modemAPI = {}
+
+local function findComputer(force)
+    local computerAPI = require('computerAPI')
+    return computerAPI.findComputer(force)
+end
+
+local function findNetworkComputer()
+    local computerAPI = require('computerAPI')
+    local computerList = computerAPI.listComputers({ computerAPI.computerTypes.NETWORK })
+    local networkingComputer = computerList and computerList[0] or nil
+    return networkingComputer
+end
 
 local function openModem(computerInfo)
     local modem = peripheral.wrap(computerInfo.modemSide)
@@ -18,7 +29,7 @@ function modemAPI.waitForMessage(timeout)
     local cachePath = 'modem/messageResult.lua'
 
     local function execute()
-        openModem(computerAPI.findComputer())
+        openModem(findComputer())
         local eventTable = eventAPI.waitForEvent('modem_message')
 
         local result = {
@@ -42,7 +53,7 @@ function modemAPI.waitForMessage(timeout)
 end
 
 function modemAPI.sendMessage(content, destinationChannel, replyChannel)
-    local computerInfo = computerAPI.findComputer()
+    local computerInfo = findComputer()
     if not computerInfo then
         print('Computer not registered in the network')
         return
@@ -62,7 +73,7 @@ function modemAPI.sendMessageAndWaitResponse(content, destinationChannel, replyC
 end
 
 function modemAPI.broadcastMessage(content, replyChannel)
-    local computerList = computerAPI.listComputers({ computerAPI.computerTypes.NETWORK })
+    local computerList = findNetworkComputer()
     local networkingComputer = computerList and computerList[0] or nil
 
     if not networkingComputer then

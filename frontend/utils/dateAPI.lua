@@ -50,6 +50,7 @@ function dateAPI.addDays(timestampTable, days)
 end
 
 function dateAPI.getTimestampTable()
+    ---@diagnostic disable-next-line: undefined-global
     return os.date("*t", timestamp) or os.date("%format", timestamp)
 end
 
