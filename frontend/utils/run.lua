@@ -30,7 +30,7 @@ while true do
 
     local message = eventTable.message
     print('[' .. message.method .. '] ' .. message.url)
-    print('Args: ' .. jsonAPI.toJson(message.args, true))
+    print('Args: ' .. jsonAPI.toJson(message.params, true))
     if not handleRequest(message, eventTable.replyChannel) then
         print('Message not handled')
     end

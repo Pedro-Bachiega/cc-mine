@@ -77,6 +77,7 @@ local function unpack()
         error('computerAPI not found')
     end
 
+    print('unpack - Finding computer')
     local computerInfo = computerAPI.findComputer()
     local computerType = computerInfo and computerInfo.computerType or chooseComputerType()
 

@@ -1,7 +1,16 @@
 ---------------- Utils ----------------
 
-local controls = { ["\n"] = "\\n", ["\r"] = "\\r", ["\t"] = "\\t", ["\b"] = "\\b", ["\f"] = "\\f", ["\""] = "\\\"",
-	["\\"] = "\\\\" }
+local controls = {
+	["\n"] = "\\n",
+	["\r"] = "\\r",
+	["\t"] = "\\t",
+	["\b"] = "\\b",
+	["\f"] = "\\f",
+	["\""] = "\\\"",
+	["\\"] = "\\\\"
+}
+
+local whites = { ['\n'] = true, ['\r'] = true, ['\t'] = true, [' '] = true, [','] = true, [':'] = true }
 
 local function isArray(t)
 	local max = 0
@@ -15,7 +24,6 @@ local function isArray(t)
 	return max == #t
 end
 
-local whites = { ['\n'] = true, ['\r'] = true, ['\t'] = true, [' '] = true, [','] = true, [':'] = true }
 local function removeWhite(str)
 	while whites[str:sub(1, 1)] do
 		str = str:sub(2)
@@ -72,10 +80,10 @@ local function encodeCommon(val, pretty, tabLevel, tTracking)
 				str = str .. (pretty and ": " or ":") .. encodeCommon(v, pretty, tabLevel, tTracking)
 			end)
 		end
-		-- String encoding
+	-- String encoding
 	elseif type(val) == "string" then
-		str = '"' .. string.gsub(val, "[%c\"\\]", controls) .. '"'
-		-- Number encoding
+		str = '"' .. val:gsub("[%c\"\\]", controls) .. '"'
+	-- Number encoding
 	elseif type(val) == "number" or type(val) == "boolean" then
 		str = tostring(val)
 	else

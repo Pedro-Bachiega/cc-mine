@@ -8,31 +8,31 @@ local eventHandlerAPI = {}
 
 -- Deletes computer on cache and system
 local function handleComputerDelete(request, _)
-    computerRepository.deleteComputer(request.args.id)
+    computerRepository.deleteComputer(request.params.id)
 end
 
 -- Searches for computer on cache or system (only on system if 'force' == true)
 local function handleComputerFind(request, replyChannel)
-    local response = computerRepository.findComputer(request.args.id, request.args.force)
+    local response = computerRepository.findComputer(request.params.id, request.params.force)
     modemAPI.sendMessage(response, replyChannel)
 end
 
 -- Lists computers on cache or system (only on system if 'force' == true).
 -- Can be filtered by computerType by passing an array of 'computerAPI.computerTypes'
 local function handleComputerList(request, replyChannel)
-    local response = computerRepository.listComputers(request.args.computerTypes, request.args.force)
+    local response = computerRepository.listComputers(request.params.computerTypes, request.params.force)
     modemAPI.sendMessage(response, replyChannel)
 end
 
 -- Registers computer on system
 local function handleComputerRegister(request, replyChannel)
-    local response = computerRepository.registerComputer(request.args)
+    local response = computerRepository.registerComputer(request.params)
     modemAPI.sendMessage(response, replyChannel)
 end
 
 -- Updates computer on system
 local function handleComputerUpdate(request, replyChannel)
-    local response = computerRepository.updateComputer(request.args)
+    local response = computerRepository.updateComputer(request.params)
     modemAPI.sendMessage(response, replyChannel)
 end
 

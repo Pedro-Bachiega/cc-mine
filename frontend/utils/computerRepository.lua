@@ -5,20 +5,20 @@ local computerRepository = {}
 local defaultTimeoutSeconds = 30
 
 function computerRepository.deleteComputer()
-    local args = { id = os.getComputerID() }
-    local request = repositoryAPI.buildRequest('/computer/delete', args)
+    local params = { id = os.getComputerID() }
+    local request = repositoryAPI.buildRequest('/computer/delete', params)
     return modemAPI.broadcastMessage(request)
 end
 
 function computerRepository.findComputer(force)
-    local args = { id = os.getComputerID(), force = force }
-    local request = repositoryAPI.buildRequest('/computer/find', args)
+    local params = { id = os.getComputerID(), force = force }
+    local request = repositoryAPI.buildRequest('/computer/find', params)
     return modemAPI.broadcastMessageAndWaitResponse(request, nil, defaultTimeoutSeconds)
 end
 
 function computerRepository.listComputers(computerType, force)
-    local args = { computerType = computerType, force = force }
-    local request = repositoryAPI.buildRequest('/computer/list', args)
+    local params = { computerType = computerType, force = force }
+    local request = repositoryAPI.buildRequest('/computer/list', params)
     return modemAPI.broadcastMessageAndWaitResponse(request, nil, defaultTimeoutSeconds)
 end
 
