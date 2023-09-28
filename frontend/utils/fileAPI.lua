@@ -36,4 +36,25 @@ function fileAPI.saveToFile(fileName, content, force)
     return true
 end
 
+function fileAPI.moveFile(fullPath, newPath, force)
+    if force then
+        fileAPI.deleteFile(newPath)
+    elseif fs.exists(newPath) then
+        return
+    end
+
+    fs.move(fullPath, newPath)
+end
+
+function fileAPI.moveDir(fullPath, newPath, clearIfExists, force)
+    if clearIfExists then
+        fileAPI.deleteFile(newPath)
+    end
+
+    local files = fs.list(fullPath)
+    for _, fileName in ipairs(files) do
+        fileAPI.moveFile(fullPath .. '/' .. fileName, newPath .. '/' .. fileName, force)
+    end
+end
+
 return fileAPI
