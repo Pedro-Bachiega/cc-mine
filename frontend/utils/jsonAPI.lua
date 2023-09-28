@@ -4,7 +4,7 @@ local controls = {["\n"]="\\n", ["\r"]="\\r", ["\t"]="\\t", ["\b"]="\\b", ["\f"]
 
 local function isArray(t)
 	local max = 0
-	for k,v in pairs(t) do
+	for k, v in pairs(t) do
 		if type(k) ~= "number" then
 			return false
 		elseif k > max then
@@ -15,7 +15,7 @@ local function isArray(t)
 end
 
 local whites = {['\n']=true; ['\r']=true; ['\t']=true; [' ']=true; [',']=true; [':']=true}
-function removeWhite(str)
+local function removeWhite(str)
 	while whites[str:sub(1, 1)] do
 		str = str:sub(2)
 	end
@@ -157,6 +157,14 @@ local function parseArray(str)
 	return val, str
 end
 
+local function parseMember(str)
+	local k = nil
+	k, str = parseValue(str)
+	local val = nil
+	val, str = parseValue(str)
+	return k, val, str
+end
+
 local function parseObject(str)
 	str = removeWhite(str:sub(2))
 
@@ -169,14 +177,6 @@ local function parseObject(str)
 	end
 	str = removeWhite(str:sub(2))
 	return val, str
-end
-
-local function parseMember(str)
-	local k = nil
-	k, str = parseValue(str)
-	local val = nil
-	val, str = parseValue(str)
-	return k, val, str
 end
 
 local function parseValue(str)
@@ -199,8 +199,7 @@ end
 
 local function decode(str)
 	str = removeWhite(str)
-	t = parseValue(str)
-	return t
+	return parseValue(str)
 end
 
 local function decodeFromFile(path)
@@ -212,15 +211,23 @@ end
 
 ---------------- Access ----------------
 
-function fromJson(jsonString)
-    return jsonAPI.decode(jsonString)
+local jsonAPI = {}
+
+function jsonAPI.fromJson(jsonString)
+    return decode(jsonString)
 end
 
-function toJson(jsonString, pretty)
-    if pretty then return jsonAPI.encodePretty(jsonString) end
-    return jsonAPI.encode(jsonString)
+function jsonAPI.fromJsonFile(path)
+    return decodeFromFile(path)
 end
 
-function prettifyJson(jsonString)
-    return toJson(fromJson(jsonString), true)
+function jsonAPI.toJson(content, pretty)
+	if not content then return '' end
+    return pretty and encodePretty(content) or encode(content)
 end
+
+function jsonAPI.prettifyJson(jsonString)
+    return jsonAPI.toJson(jsonAPI.fromJson(jsonString), true)
+end
+
+return jsonAPI

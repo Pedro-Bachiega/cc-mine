@@ -1,47 +1,8 @@
-local buttonAPI = require('buttonAPI.lua')
-local cacheAPI = require('cacheAPI.lua')
-local functionAPI = require('functionAPI.lua')
-local jsonAPI = require('jsonAPI.lua')
-local mathAPI = require('mathAPI.lua')
-local modemAPI = require('modemAPI.lua')
-local uiAPI = require('uiAPI.lua')
-
-local function getCachePath(id)
-    return 'farm/' .. id .. '/farmInfo.lua'
-end
-
-local function fromCache(id)
-    return cacheAPI.fromCache(getCachePath(id))
-end
-
-local function saveToCache(id, response)
-    return cacheAPI.saveToCache(getCachePath(id), response)
-end
-
-local function getFarmInfo(channel, skipCache)
-    local info = nil
-    if not skipCache then info = fromCache(channel) end
-    if not info then info = functionAPI.requestFarmInfo(channel) end
-    return info
-end
-
-local function toggleFarmState(channel)
-    local farmInfo = getFarmInfo(channel)
-
-    if farmInfo.error then
-        print('Operation cancelled. ' .. farmInfo.message)
-        return nil
-    else
-        farmInfo.state = not farmInfo.state
-
-        -- TODO Backend
-        local request = jsonAPI.toJson({command = 'insert', body = farmInfo})
-        print(request)
-        local response = modemAPI.sendMessageAndWaitResponse(request, constants.CHANNEL_STORAGE)
-        if not response.error then saveToCache(channel, response.message) end
-        return response
-    end
-end
+local buttonAPI = require('buttonAPI')
+local computerAPI = require('computerAPI')
+local functionAPI = require('functionAPI')
+local mathAPI = require('mathAPI')
+local uiAPI = require('uiAPI')
 
 local function getButtonColor(state)
     return state and colors.green or colors.red
@@ -49,18 +10,25 @@ end
 
 local function onButtonClick()
     return function(buttonClicked)
-        local args = buttonClicked.args
-        if args.state then args.state = not args.state end
+        local computer = buttonClicked.args
 
-        local farmInfo = toggleFarmState(args.channel.channel)
-
-        if not farmInfo then
+        if not computer.data then
             buttonClicked.blink(colors.lightGray)
             return
         end
 
-        buttonClicked.args.state = farmInfo.state
-        buttonClicked.setColor(getButtonColor(farmInfo.state)).draw()
+        computer.data.state = not computer.data.state
+
+        local function updateButton()
+            buttonClicked.args = computer
+            buttonClicked.setColor(getButtonColor(computer.data.state)).draw()
+        end
+
+        local function updateComputer()
+            computerAPI.updateComputer(computer)
+        end
+
+        parallel.waitForAny(updateButton, updateComputer)
     end
 end
 
@@ -72,9 +40,12 @@ local function getMargin(usableHeight)
     return result > 1 and result or 1
 end
 
-local function createButtons(monitor, initialX, initialY, finalY, monWidth, monHeight)
+local function createButtons(initialX, initialY, finalY, monWidth)
     local buttonTable = {}
     local farms = computerAPI.listComputers({ computerAPI.computerTypes.FARM })
+    if not farms or not functionAPI.isTable(farms) then
+        error('No farms listed, check logs')
+    end
 
     local x = initialX
     local y = initialY
@@ -82,26 +53,22 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
     local maxWidth = 0
     local margin = getMargin(finalY - initialY - padding)
 
-    for _, value in pairs(farms) do
-        if maxWidth < #value.name then maxWidth = #value.name end
+    ---@diagnostic disable-next-line: param-type-mismatch
+    for _, computer in pairs(farms) do
+        if maxWidth < #computer.name then maxWidth = #computer.name end
     end
 
-    for _, value in pairs(farms) do
-        -- TODO Add farm into to computer info as typed data
-        local farmInfo = getCachedFarmInfo(value.channel) or {}
-
-        local newButton = buttonAPI.create(value.name)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    for _, computer in pairs(farms) do
+        local newButton = buttonAPI.create(computer.name)
             .setHorizontalPadding(padding)
             .setVerticalPadding(padding)
             .setAlignment('left')
             .setPos(x, y)
-            .setArgs({
-                state = farmInfo.state or false,
-                channel = value
-            })
+            .setArgs(computer)
 
         newButton.setSize(maxWidth, newButton.height)
-            .setColor(getButtonColor(newButton.args.state))
+            .setColor(getButtonColor(computer.data.state))
 
         local atEnd = (newButton.x + newButton.getWidth()) >= monWidth
         if atEnd then
@@ -119,15 +86,15 @@ local function createButtons(monitor, initialX, initialY, finalY, monWidth, monH
     return buttonTable
 end
 
-local computerInfo = computerAPI.findComputer()
+local computerInfo = computerAPI.findComputer() or error('Computer not registered')
 local monitor = peripheral.wrap(computerInfo.monitorSide)
 
 while true do
     monitor.clear()
-    local monWidth, monHeight = monitor.getSize()
+    local monWidth, _ = monitor.getSize()
     local initialX = 2
     local initialY = uiAPI.drawHeader(monitor, 'Farms: ')
     local finalY = uiAPI.drawTimestampFooter(monitor)
-    local buttons = createButtons(monitor, initialX, initialY, finalY, monWidth, monHeight)
+    local buttons = createButtons(initialX, initialY, finalY, monWidth)
     buttonAPI.await(buttons)
 end

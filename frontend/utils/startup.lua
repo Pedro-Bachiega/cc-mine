@@ -1,5 +1,9 @@
--- Required by other scripts
-if not computerAPI then os.loadAPI('computerAPI.lua') end
+sleep(os.getComputerId() * 2)
+
+local computerAPI = require('computerAPI')
+
+-- Cache computer information for the given time on every startup
+computerAPI.findComputer()
 
 shell.run('postBoot.lua')
 shell.run('run.lua')

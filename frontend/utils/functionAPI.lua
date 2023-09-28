@@ -1,54 +1,41 @@
-function arrayContains(array, element)
-    for index, value in ipairs(array) do
+local functionAPI = {}
+
+---------------- Public functions ----------------
+
+function functionAPI.arrayContains(array, element)
+    for _, value in ipairs(array) do
         if value == element then return true end
     end
     return false
 end
 
-local function getTimestampTable()
-    return os.date("*t", timestamp) or os.date("%format", timestamp)
+function functionAPI.isTable(element)
+    return type(element) == "table"
 end
 
-function getDateTime()
-    local table = getTimestampTable()
-    return string.format(
-        '%02d:%02d - %d/%d/%d',
-        table.hour,
-        table.min,
-        table.day,
-        table.month,
-        table.year
-    )
-end
+function functionAPI.runWithRetries(maxRetries, executionBlock)
+    local result = nil
+    local currentRetry = 0
+    local defaultMaxRetries = 30
+    local currentMaxRetries = maxRetries or defaultMaxRetries
 
-function getDate(pretty)
-    local table = getTimestampTable()
-    if pretty then
-        return string.format(
-            '%d/%d/%d',
-            table.day,
-            table.month,
-            table.year
-        )
-    else
-        return string.format(
-            '%d-%d-%d',
-            table.year,
-            table.month,
-            table.day
-        )
+    while not result and currentRetry < currentMaxRetries do
+        if currentRetry > 0 then print('Retrying: ' .. currentRetry) end
+
+        result = executionBlock()
+        currentRetry = currentRetry + 1
     end
+
+    if not result then
+        print('Could not get result after ' .. currentRetry .. ' tries')
+    end
+
+    return result
 end
 
-function getTime()
-    local table = getTimestampTable()
-    return string.format(
-        '%02d:%02d',
-        table.hour,
-        table.min
-    )
+function functionAPI.runWithTimeout(timeoutSeconds, executionBlock)
+    local function waitTimeout() sleep(timeoutSeconds) end
+    parallel.waitForAny(waitTimeout, executionBlock)
 end
 
-function isTable(element)
-	return type(element) == "table"
-end
+return functionAPI

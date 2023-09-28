@@ -1,10 +1,11 @@
-local args = {...}
 local computerAPI = nil
 
 if fs.exists('computerAPI.lua') then
     computerAPI = require('computerAPI')
 elseif fs.exists('cc-mine/utils/computerAPI.lua') then
-    computerAPI = require('cc-mine/utils/computerAPI')
+    computerAPI = require('cc-mine.utils.computerAPI')
+else
+    error('computerAPI not found')
 end
 
 local function chooseComputerType()
@@ -16,7 +17,7 @@ local function chooseComputerType()
     end
 
     local result = tonumber(read())
-    local validResult = result > 0 and result <= #types
+    local validResult = result and result > 0 and result <= #types
     if not validResult then result = #types end
 
     return types[result]
@@ -47,23 +48,23 @@ local function chooseSideFor(name, required)
     return sidesTable[result]
 end
 
-local function chooseSides() {
+local function chooseSides()
     local modemSide = chooseSideFor('modem', true)
     local monitorSide = chooseSideFor('monitor', false)
     local redstoneSide = chooseSideFor('redstone', true)
 
     return modemSide, monitorSide, redstoneSide
-}
+end
 
 local function deleteFiles(list)
-    for index, fileName in ipairs(list) do
+    for _, fileName in ipairs(list) do
         if fs.exists(fileName) then fs.delete(fileName) end
     end
 end
 
 local function copyFiles(path, force)
     local files = fs.list(path)
-    for index, fileName in ipairs(files) do
+    for _, fileName in ipairs(files) do
         if (force or not fs.exists(fileName)) and fileName ~= 'install.lua' then
             fs.copy(path .. fileName, fileName)
         end
@@ -71,7 +72,7 @@ local function copyFiles(path, force)
 end
 
 local function unpack()
-    local computerInfo = computerAPI and computerAPI.findComputer() or nil
+    local computerInfo = computerAPI.findComputer()
     local computerType = computerInfo and computerInfo.computerType or chooseComputerType()
 
     local contentDir = 'cc-mine/' .. string.lower(computerType) .. '/'
@@ -103,13 +104,15 @@ local function unpack()
         end
         os.setComputerLabel(label)
 
+        local computerId = os.getComputerID()
         computerInfo = {
-            id = os.getComputerID(),
+            id = computerId,
             name = label,
             computerType = computerType,
             modemSide = modemSide,
             monitorSide = monitorSide,
-            redstoneSide = redstoneSide
+            redstoneSide = redstoneSide,
+            data = computerAPI.createDefaultData(computerType, { id = computerId })
         }
         computerAPI.registerComputer(computerInfo)
     end

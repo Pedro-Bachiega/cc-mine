@@ -1,7 +1,9 @@
-local functionAPI = require('functionAPI.lua')
-local uiAPI = require('uiAPI.lua')
+local functionAPI = require('functionAPI')
+local uiAPI = require('uiAPI')
 
-function writeFarmInfo(computerInfo, infoTable)
+local displayAPI = {}
+
+function displayAPI.writeFarmInfo(computerInfo)
     local monitor = peripheral.wrap(computerInfo.monitorSide)
 
     function monitor:writeFarmName(info, x, y)
@@ -31,7 +33,7 @@ function writeFarmInfo(computerInfo, infoTable)
     end
     
     function monitor:writeTimestamp(x, y)
-        local text = 'Updated at: ' .. functionAPI.getDateTime()
+        local text = 'Updated at: ' .. functionAPI.getDateTime(true)
         uiAPI.drawAt(self, text, x, y, colors.lightGray)
     end
 
@@ -39,7 +41,7 @@ function writeFarmInfo(computerInfo, infoTable)
         uiAPI.drawHorizontalDividerAt(self, y)
     end
 
-    local maxX, maxY = monitor.getSize()
+    local _, maxY = monitor.getSize()
     local minX = 2
     local minY = 2
 
@@ -49,33 +51,33 @@ function writeFarmInfo(computerInfo, infoTable)
     monitor:writeFarmName(computerInfo.name, minX, minY)
 
     -- State - Line 3
-    monitor:writeFarmState(infoTable.state, minX, 3)
+    monitor:writeFarmState(computerInfo.data.state, minX, 3)
 
     -- Divider - Line 4
     monitor:drawDivider(4)
 
     -- Drops - Line 6+
-    if infoTable.content  then
+    if computerInfo.data.content  then
         local cursorY = 6
 
         local function writeDrops(dropTable)
             local y = cursorY
-            for index, drop in ipairs(dropTable) do
+            for _, drop in ipairs(dropTable) do
                 y = y + 1
                 monitor:writeFarmContents('', drop, colors.lime, minX + 2, y)
             end
             return y
         end
 
-        if infoTable.content.fluid then
+        if computerInfo.data.content.fluid then
             monitor:writeFarmContents('Fluids: ', '', colors.lime, minX, cursorY)
-            cursorY = writeDrops(infoTable.content.fluid)
+            cursorY = writeDrops(computerInfo.data.content.fluid)
         end
 
-        if infoTable.content.solid then
+        if computerInfo.data.content.solid then
             cursorY = cursorY + 1
             monitor:writeFarmContents('Solids: ', '', colors.lime, minX, cursorY)
-            cursorY = writeDrops(infoTable.content.solid)
+            cursorY = writeDrops(computerInfo.data.content.solid)
         end
     end
 
@@ -87,3 +89,5 @@ function writeFarmInfo(computerInfo, infoTable)
     monitor:writeFarmId(minX, maxY - 2)
     monitor:writeTimestamp(minX, maxY - 1)
 end
+
+return displayAPI

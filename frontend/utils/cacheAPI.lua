@@ -1,25 +1,50 @@
-local fileAPI = require('fileAPI.lua')
-local jsonAPI = require('jsonAPI.lua')
+local dateAPI = require('dateAPI')
+local fileAPI = require('fileAPI')
+local jsonAPI = require('jsonAPI')
 
-function clear()
+local cacheAPI = {}
+
+local function createCacheFile(content, encode, secondsToInvalidate)
+    local defaultSecondsToInvalidate = 24 * 60 * 60
+    local currentSecondsToInvalidate = secondsToInvalidate or defaultSecondsToInvalidate
+    local currentTimestamp = dateAPI.getTimestampTable()
+    local cachedAt = dateAPI.getDateTime(false, currentTimestamp)
+    local invalidateAt = dateAPI.getDateTime(
+        false,
+        dateAPI.addSeconds(currentTimestamp, currentSecondsToInvalidate)
+    )
+
+    local result = {
+        content = encode and jsonAPI.toJson(content) or content,
+        cachedAt = cachedAt,
+        invalidateAt = invalidateAt
+    }
+    return jsonAPI.toJson(result)
+end
+
+function cacheAPI.clear()
     fileAPI.deleteFile('cache')
 end
 
-function deleteFromCache(path)
+function cacheAPI.deleteFromCache(path)
     fileAPI.deleteFile('cache/' .. path)
 end
 
-function saveToCache(path, content, encode, force)
+function cacheAPI.saveToCache(path, content, encode, secondsToInvalidate, force)
     if not fs.exists('cache') then fs.makeDir('cache') end
 
-    local processedContent = encode and jsonAPI.toJson(content) or content
-    return fileAPI.saveToFile('cache/%s' .. path, processedContent, force)
+    local jsonString = createCacheFile(content, encode, secondsToInvalidate)
+    return fileAPI.saveToFile('cache/' .. path, jsonString, force)
 end
 
-function fromCache(path, decode)
-    local cachePath = 'cache/%s' .. path
+function cacheAPI.fromCache(path, decode, deleteAfter)
+    local cachePath = 'cache/' .. path
     if not fs.exists(cachePath) then return nil end
 
-    local content = fileAPI.fromFile(cachePath)
-    return decode and jsonAPI.fromJson(content) or content
+    local result = decode and jsonAPI.fromJsonFile(cachePath) or fileAPI.fromFile(cachePath)
+    if deleteAfter then cacheAPI.deleteFromCache(cachePath) end
+
+    return result
 end
+
+return cacheAPI

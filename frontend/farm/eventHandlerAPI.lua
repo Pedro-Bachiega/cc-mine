@@ -1,36 +1,35 @@
-local cacheAPI = require('cacheAPI.lua')
-local displayAPI = require('displayAPI.lua')
-local functionAPI = require('functionAPI.lua')
+local displayAPI = require('displayAPI')
+local computerAPI = require('computerAPI')
 
-local function changeSignal(computerInfo, state)
-    return redstone.setOutput(computerInfo.redstoneSide, state)
+-- Updates computer info and toggles its redstone output
+local function handleUpdate()
+    local computer = computerAPI.findComputer()
+    if not computer then
+        print('Computer not registered')
+        return
+    end
+
+    if computer.monitorSide ~= 'none' then displayAPI.writeFarmInfo(computer) end
+
+    redstone.setOutput(computer.redstoneSide, computer.data.state or false)
 end
 
--- TODO Send to backend
-local function updateInfo(newInfo)
-    local computerInfo = computerAPI.findComputer()
+-- Handles any custom events that are not already handled by run.lua
+local eventHandlerAPI = {}
 
-    -- TODO Fetch from backend
-    local farmInfo = newInfo or functionAPI.requestFarmInfo(computerInfo.id)
-    farmInfo.name = computerInfo.name
-
-    -- Draw info
-    if computerInfo.monitorSide ~= 'none' then displayAPI.writeFarmInfo(computerInfo, farmInfo) end
-
-    -- Change signal
-    redstone.setOutput(computerInfo.redstoneSide, farmInfo.state or false)
-end
-
-function handle(request, replyChannel)
-    if request.url == '/farm/update' and request.method == 'POST' then
-        if not request.body then
-            print('E - Missing body')
-            return false
-        end
-
-        updateInfo(request.body)
+-- Occurs before any default event handling
+function eventHandlerAPI.handlePre(request, _)
+    if request.url == '/computer/update' then
+        handleUpdate()
         return true
     end
 
     return false
 end
+
+-- Occurs after any default event handling
+function eventHandlerAPI.handlePost(_, _)
+    return false
+end
+
+return eventHandlerAPI

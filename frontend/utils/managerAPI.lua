@@ -1,5 +1,9 @@
-local modemAPI = require('modemAPI.lua')
+local modemAPI = require('modemAPI')
 
-function clearAllCaches()
+local managerAPI = {}
+
+function managerAPI.clearAllCaches()
     modemAPI.broadcastMessage({method = 'GET', url = '/cache/clear'})
 end
+
+return managerAPI

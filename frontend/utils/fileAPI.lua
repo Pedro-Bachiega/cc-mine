@@ -1,17 +1,19 @@
-function appendToFile(fileName, content)
+local fileAPI = {}
+
+function fileAPI.appendToFile(fileName, content)
     local mode = 'a'
     if not fs.exists(fileName) then mode = 'w' end
 
     local file = fs.open(fileName, mode)
-    file.write(mode == a and ('\n' .. content) or content)
+    file.write(mode == 'a' and ('\n' .. content) or content)
     file.close()
 end
 
-function deleteFile(fileName)
+function fileAPI.deleteFile(fileName)
     if fs.exists(fileName) then fs.delete(fileName) end
 end
 
-function fromFile(fileName)
+function fileAPI.fromFile(fileName)
     if not fs.exists(fileName) then return nil end
 
     local file = fs.open(fileName, 'r')
@@ -20,9 +22,9 @@ function fromFile(fileName)
     return content
 end
 
-function saveToFile(fileName, content, force)
+function fileAPI.saveToFile(fileName, content, force)
     if force then
-        deleteFile(fileName)
+        fileAPI.deleteFile(fileName)
     elseif not force and fs.exists(fileName) then
         return false
     end
@@ -33,3 +35,5 @@ function saveToFile(fileName, content, force)
 
     return true
 end
+
+return fileAPI
