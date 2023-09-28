@@ -1,13 +1,5 @@
 local computerAPI = nil
 
-if fs.exists('computerAPI.lua') then
-    computerAPI = require('computerAPI')
-elseif fs.exists('cc-mine/utils/computerAPI.lua') then
-    computerAPI = require('cc-mine.utils.computerAPI')
-else
-    error('computerAPI not found')
-end
-
 local function chooseComputerType()
     local types = computerAPI.computerTypes
     print('\nSelect the computer type:')
@@ -71,7 +63,20 @@ local function copyFiles(path, force)
     end
 end
 
+local function unpackUtils()
+    local utilDir = 'cc-mine/utils/'
+    local utilFiles = fs.list(utilDir)
+    deleteFiles(utilFiles)
+    copyFiles(utilDir)
+end
+
 local function unpack()
+    computerAPI = require('computerAPI')
+
+    if not computerAPI then
+        error('computerAPI not found')
+    end
+
     local computerInfo = computerAPI.findComputer()
     local computerType = computerInfo and computerInfo.computerType or chooseComputerType()
 
@@ -81,16 +86,11 @@ local function unpack()
     local repositoryDir = 'cc-mine/repository/'
     local repositoryFiles = fs.list(repositoryDir)
 
-    local utilDir = 'cc-mine/utils/'
-    local utilFiles = fs.list(utilDir)
-
     deleteFiles(contentFiles)
     deleteFiles(repositoryFiles)
-    deleteFiles(utilFiles)
 
     copyFiles(contentDir, true)
     copyFiles(repositoryDir)
-    copyFiles(utilDir)
 
     fs.delete('cc-mine/')
 
@@ -118,5 +118,6 @@ local function unpack()
     end
 end
 
+unpackUtils()
 unpack()
 os.reboot()
