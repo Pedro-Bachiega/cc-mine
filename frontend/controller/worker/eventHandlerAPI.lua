@@ -11,8 +11,4 @@ function eventHandlerAPI.handlePost(_, _)
     return false
 end
 
-function eventHandlerAPI.handle(_, _)
-    return false
-end
-
 return eventHandlerAPI
