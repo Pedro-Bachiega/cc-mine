@@ -1,0 +1,15 @@
+{
+    "Lua.diagnostics.globals": [
+        "colors",
+        "redstone",
+        "peripheral",
+        "sleep",
+        "parallel",
+        "pocket",
+        "fs",
+        "http",
+        "shell",
+        "read",
+        "multishell"
+    ]
+}

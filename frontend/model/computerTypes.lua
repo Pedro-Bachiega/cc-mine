@@ -1,4 +1,4 @@
-export enum ComputerType {
+return {
     FARM = "FARM",
     MANAGER = "MANAGER",
     WORKER = "WORKER"
