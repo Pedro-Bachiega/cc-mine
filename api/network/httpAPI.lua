@@ -4,7 +4,7 @@ local jsonAPI = require('api.util.jsonAPI')
 local defaultTimeoutSeconds = 15
 local maxRetriesDefault = 5
 
-local baseApiUrl = 'https://southamerica-east1-mine-cc-dev.cloudfunctions.net'
+local baseApiUrl = 'https://baseurl.com'
 
 local RequestStatus = {
     LOADING = 0,
