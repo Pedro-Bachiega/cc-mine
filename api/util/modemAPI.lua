@@ -9,6 +9,7 @@ local defaultMaxRetries = 30
 
 local modemAPI = {}
 
+-- Finds modem and opens it with the computer id as channel.
 local function openModem()
     local modem = peripheralAPI.requirePeripheral('modem')
     ---@diagnostic disable-next-line: undefined-field
@@ -16,6 +17,7 @@ local function openModem()
     return modem
 end
 
+-- Waits for a message synchronously.
 function modemAPI.waitForMessage(timeout)
     local cachePath = 'modem/messageResult.lua'
 

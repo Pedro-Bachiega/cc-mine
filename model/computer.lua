@@ -1,9 +1,7 @@
-local computer = {
+return {
     defaultData = {
         FARM = {
             state = false
         }
     }
 }
-
-return computer

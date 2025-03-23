@@ -46,13 +46,13 @@ function functionAPI.runWithRetries(maxRetries, executionBlock)
 end
 
 function functionAPI.runWithTimeout(timeoutSeconds, executionBlock)
-    local function waitTimeout() sleep(timeoutSeconds) end
-    parallel.waitForAny(waitTimeout, executionBlock)
-end
+    local function waitTimeout()
+        sleep(timeoutSeconds)
+        print('Timeout reached')
+        error('Timeout reached')
+    end
 
-function functionAPI.unrequire(module)
-    package.loaded[module] = nil
-    _G[module] = nil
+    return pcall(parallel.waitForAny(waitTimeout, executionBlock))
 end
 
 return functionAPI

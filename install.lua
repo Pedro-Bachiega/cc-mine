@@ -4,6 +4,7 @@ local computerTypes = require('model.computerTypes')
 local functionAPI = require('api.util.functionAPI')
 local fileAPI = require('api.util.fileAPI')
 
+-- Choose computer type from [computerTypes] enum
 local function chooseComputerType()
     local typesArray = functionAPI.tableToValueArray(computerTypes)
 
@@ -23,6 +24,7 @@ local function chooseComputerType()
     return typesArray[result]
 end
 
+-- Choose a side from [computerSides] enum
 local function chooseSideFor(name, required)
     if pocket then return computerSides.NONE end
 
@@ -63,6 +65,15 @@ os.setComputerLabel(label)
 
 local computerType = computerAPI.findComputerType() or chooseComputerType()
 local redstoneSide = chooseSideFor('redstone', true)
+
+print('\nPlease input the network manager computer ID: ')
+local networkManagerId = read()
+
+-- Check if networkManagerId not a number
+while not networkManagerId or not networkManagerId:match('^[0-9]+$') do
+    print('Invalid network manager ID. It must be a number.')
+    networkManagerId = read()
+end
 
 ---@diagnostic disable-next-line: undefined-field
 computerAPI.registerComputer(os.getComputerID(), label, computerType, redstoneSide)
